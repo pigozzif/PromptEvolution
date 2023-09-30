@@ -1,10 +1,13 @@
 import os
 import io
 import json
+
 import numpy as np
 from collections import defaultdict
 from torch.utils.data import Dataset
-from nltk.tokenize import TweetTokenizer
+from nltk.tokenize import TweetTokenizer, sent_tokenize
+from datasets import load_dataset
+from transformers import AutoTokenizer
 
 from utils import OrderedCounter
 
@@ -89,16 +92,11 @@ class PTB(Dataset):
         data = defaultdict(dict)
         with open(self.raw_data_path, 'r') as file:
             for i, line in enumerate(file):
-                print(line)
                 words = tokenizer.tokenize(line)
-                print(words)
-                inp = ['<sos>'] + words
+                inp = ["<sos>"] + words
                 inp = inp[:self.max_sequence_length]
-                print(inp)
                 target = words[:self.max_sequence_length - 1]
-                target = target + ['<eos>']
-                print(target)
-                exit()
+                target = target + ["<eos>"]
                 assert len(inp) == len(target), "%i, %i" % (len(inp), len(target))
                 length = len(inp)
                 inp.extend(["<pad>"] * (self.max_sequence_length - length))
@@ -139,3 +137,29 @@ class PTB(Dataset):
             data = json.dumps(vocab, ensure_ascii=False)
             vocab_file.write(data.encode("utf8", "replace"))
         self._load_vocab()
+
+
+class Wikipedia(Dataset):
+
+    def __init__(self, max_length=50):
+        self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.data_stream = load_dataset("wikipedia", "20220301.en", beam_runner="DirectRunner", streaming=True)
+        self.max_length = max_length
+        self.temp_data = []
+
+    def __len__(self):
+        return 0
+
+    def __getitem__(self, idx):
+        if not self.temp_data:
+            self.temp_data = next(iter(self.data_stream))
+            self.temp_data = sent_tokenize(self.temp_data)
+        next_sentence = self.temp_data.pop(0)
+        tokenized_sentence = self.word_tokenizer(next_sentence,
+                                                 padding=True,
+                                                 truncation=True,
+                                                 max_length=64,
+                                                 add_special_tokens=True)
+        return {"input": tokenized_sentence[:-1],
+                "target": tokenized_sentence[1:],
+                "length": len(tokenized_sentence) - 1}

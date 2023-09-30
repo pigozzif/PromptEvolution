@@ -1,6 +1,7 @@
 import torch
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+# from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import numpy as np
+from datasets import load_dataset
 
 from utilities import preprocess, generate_text
 
@@ -24,7 +25,18 @@ def testQA():
 
 
 if __name__ == '__main__':
-    testQA()
+    # testQA()
+    data_stream = load_dataset("wikipedia", "20220301.en", beam_runner="DirectRunner", streaming=True)
+    import nltk
+    nltk.download("punkt")
+    c = 0
+    for i, e in enumerate(data_stream["train"]):
+        try:
+            c += len(nltk.sent_tokenize(e["text"]))
+        except:
+            print("error")
+        print(i)
+    print(c)
     # model_name = "gpt2"
     # tokenizer = GPT2Tokenizer.from_pretrained(model_name)
     # model = GPT2LMHeadModel.from_pretrained(model_name)
