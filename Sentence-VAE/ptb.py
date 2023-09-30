@@ -12,26 +12,21 @@ from utils import OrderedCounter
 class PTB(Dataset):
 
     def __init__(self, data_dir, split, create_data, **kwargs):
-
         super().__init__()
         self.data_dir = data_dir
         self.split = split
         self.max_sequence_length = kwargs.get("max_sequence_length", 50)
-        self.min_occ = kwargs.get("min_occ", 0)
-
+        self.min_occ = kwargs.get("min_occ", -1)
         self.raw_data_path = os.path.join(data_dir, "ptb." + split + ".txt")
-        self.data_file = 'ptb.' + split + '.json'
-        self.vocab_file = 'ptb.vocab.json'
-
+        self.data_file = "ptb." + split + ".json"
+        self.vocab_file = "ptb.vocab.json"
         if create_data:
             print("Creating new %s ptb data." % split.upper())
             self._create_data()
-
         elif not os.path.exists(os.path.join(self.data_dir, self.data_file)):
             print("%s preprocessed file not found at %s. Creating new." % (
                 split.upper(), os.path.join(self.data_dir, self.data_file)))
             self._create_data()
-
         else:
             self._load_data()
 
@@ -40,11 +35,10 @@ class PTB(Dataset):
 
     def __getitem__(self, idx):
         idx = str(idx)
-
         return {
-            'input': np.asarray(self.data[idx]['input']),
-            'target': np.asarray(self.data[idx]['target']),
-            'length': self.data[idx]['length']
+            "input": np.asarray(self.data[idx]["input"]),
+            "target": np.asarray(self.data[idx]["target"]),
+            "length": self.data[idx]["length"]
         }
 
     @property
@@ -74,7 +68,6 @@ class PTB(Dataset):
         return self.i2w
 
     def _load_data(self, vocab=True):
-
         with open(os.path.join(self.data_dir, self.data_file), 'r') as file:
             self.data = json.load(file)
         if vocab:
@@ -83,87 +76,66 @@ class PTB(Dataset):
             self.w2i, self.i2w = vocab['w2i'], vocab['i2w']
 
     def _load_vocab(self):
-        with open(os.path.join(self.data_dir, self.vocab_file), 'r') as vocab_file:
+        with open(os.path.join(self.data_dir, self.vocab_file), "r") as vocab_file:
             vocab = json.load(vocab_file)
-
-        self.w2i, self.i2w = vocab['w2i'], vocab['i2w']
+        self.w2i, self.i2w = vocab["w2i"], vocab["i2w"]
 
     def _create_data(self):
-
         if self.split == "train":
             self._create_vocab()
         else:
             self._load_vocab()
-
         tokenizer = TweetTokenizer(preserve_case=False)
-
         data = defaultdict(dict)
         with open(self.raw_data_path, 'r') as file:
-
             for i, line in enumerate(file):
                 print(line)
                 words = tokenizer.tokenize(line)
                 print(words)
-                input = ['<sos>'] + words
-                input = input[:self.max_sequence_length]
-                print(input)
+                inp = ['<sos>'] + words
+                inp = inp[:self.max_sequence_length]
+                print(inp)
                 target = words[:self.max_sequence_length - 1]
                 target = target + ['<eos>']
                 print(target)
                 exit()
-                assert len(input) == len(target), "%i, %i" % (len(input), len(target))
-                length = len(input)
-
-                input.extend(['<pad>'] * (self.max_sequence_length - length))
-                target.extend(['<pad>'] * (self.max_sequence_length - length))
-
-                input = [self.w2i.get(w, self.w2i['<unk>']) for w in input]
-                target = [self.w2i.get(w, self.w2i['<unk>']) for w in target]
-
-                id = len(data)
-                data[id]['input'] = input
-                data[id]['target'] = target
-                data[id]['length'] = length
-
-        with io.open(os.path.join(self.data_dir, self.data_file), 'wb') as data_file:
+                assert len(inp) == len(target), "%i, %i" % (len(inp), len(target))
+                length = len(inp)
+                inp.extend(["<pad>"] * (self.max_sequence_length - length))
+                target.extend(["<pad>"] * (self.max_sequence_length - length))
+                inp = [self.w2i.get(w, self.w2i["<unk>"]) for w in inp]
+                target = [self.w2i.get(w, self.w2i["<unk>"]) for w in target]
+                idx = len(data)
+                data[idx]["inp"] = inp
+                data[idx]["target"] = target
+                data[idx]["length"] = length
+        with io.open(os.path.join(self.data_dir, self.data_file), "wb") as data_file:
             data = json.dumps(data, ensure_ascii=False)
-            data_file.write(data.encode('utf8', 'replace'))
-
+            data_file.write(data.encode("utf8", "replace"))
         self._load_data(vocab=False)
 
     def _create_vocab(self):
-
-        assert self.split == 'train', "Vocabulary can only be created for training file."
-
+        assert self.split == "train", "Vocabulary can only be created for training file."
         tokenizer = TweetTokenizer(preserve_case=False)
-
         w2c = OrderedCounter()
         w2i = dict()
         i2w = dict()
-
-        special_tokens = ['<pad>', '<unk>', '<sos>', '<eos>']
+        special_tokens = ["<pad>", "<unk>", "<sos>", "<eos>"]
         for i, st in enumerate(special_tokens):
-            i2w[len(w2i)] = st
-            w2i[st] = len(w2i)
-
-        with open(self.raw_data_path, 'r') as file:
-
+            i2w[i] = st
+            w2i[st] = i
+        with open(self.raw_data_path, "r") as file:
             for i, line in enumerate(file):
                 words = tokenizer.tokenize(line)
                 w2c.update(words)
-
             for w, c in w2c.items():
                 if c > self.min_occ and w not in special_tokens:
                     i2w[len(w2i)] = w
                     w2i[w] = len(w2i)
-
         assert len(w2i) == len(i2w)
-
-        print("Vocablurary of %i keys created." % len(w2i))
-
+        print("Vocabulary of {} keys created.".format(len(w2i)))
         vocab = dict(w2i=w2i, i2w=i2w)
-        with io.open(os.path.join(self.data_dir, self.vocab_file), 'wb') as vocab_file:
+        with io.open(os.path.join(self.data_dir, self.vocab_file), "wb") as vocab_file:
             data = json.dumps(vocab, ensure_ascii=False)
-            vocab_file.write(data.encode('utf8', 'replace'))
-
+            vocab_file.write(data.encode("utf8", "replace"))
         self._load_vocab()
