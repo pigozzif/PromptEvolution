@@ -1,6 +1,7 @@
 import os
 import io
 import json
+import abc
 
 import numpy as np
 from collections import defaultdict
@@ -12,7 +13,43 @@ from transformers import AutoTokenizer
 from utils import OrderedCounter
 
 
-class PTB(Dataset):
+class TextDataset(Dataset, abc.ABC):
+
+    @abc.abstractmethod
+    @property
+    def vocab_size(self):
+        pass
+
+    @abc.abstractmethod
+    @property
+    def pad_idx(self):
+        pass
+
+    @abc.abstractmethod
+    @property
+    def sos_idx(self):
+        pass
+
+    @abc.abstractmethod
+    @property
+    def eos_idx(self):
+        pass
+
+    @abc.abstractmethod
+    @property
+    def unk_idx(self):
+        pass
+
+    @abc.abstractmethod
+    def get_w2i(self):
+        pass
+
+    @abc.abstractmethod
+    def get_i2w(self):
+        pass
+
+
+class PTB(TextDataset):
 
     def __init__(self, data_dir, split, create_data, **kwargs):
         super().__init__()
@@ -44,23 +81,18 @@ class PTB(Dataset):
             "length": self.data[idx]["length"]
         }
 
-    @property
     def vocab_size(self):
         return len(self.w2i)
 
-    @property
     def pad_idx(self):
         return self.w2i['<pad>']
 
-    @property
     def sos_idx(self):
         return self.w2i['<sos>']
 
-    @property
     def eos_idx(self):
         return self.w2i['<eos>']
 
-    @property
     def unk_idx(self):
         return self.w2i['<unk>']
 
@@ -139,7 +171,7 @@ class PTB(Dataset):
         self._load_vocab()
 
 
-class Wikipedia(Dataset):
+class Wikipedia(TextDataset):
 
     def __init__(self, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -149,7 +181,7 @@ class Wikipedia(Dataset):
         self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
     def __len__(self):
-        return 0
+        return 138151688
 
     def __getitem__(self, idx):
         if not self.temp_data:
@@ -165,23 +197,18 @@ class Wikipedia(Dataset):
                 "target": tokenized_sentence[1:],
                 "length": len(tokenized_sentence) - 1}
 
-    @property
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
 
-    @property
     def pad_idx(self):
         return self.word_tokenizer.pad_token_id
 
-    @property
     def sos_idx(self):
         return self.word_tokenizer.cls_token_id
 
-    @property
     def eos_idx(self):
         return self.word_tokenizer.sep_token_id
 
-    @property
     def unk_idx(self):
         return self.word_tokenizer.unk_token_id
 
