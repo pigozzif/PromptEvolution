@@ -1,2 +1,8 @@
 # Project exclude paths
 /venv/
+*.txt
+*.csv
+*.png
+*.mp4
+*.xml
+*.json
