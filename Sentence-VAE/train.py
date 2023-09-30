@@ -30,11 +30,11 @@ def main(args):
         )
     exit()
     params = dict(
-        vocab_size=datasets['train'].vocab_size,
-        sos_idx=datasets['train'].sos_idx,
-        eos_idx=datasets['train'].eos_idx,
-        pad_idx=datasets['train'].pad_idx,
-        unk_idx=datasets['train'].unk_idx,
+        vocab_size=datasets["train"].vocab_size,
+        sos_idx=datasets["train"].sos_idx,
+        eos_idx=datasets["train"].eos_idx,
+        pad_idx=datasets["train"].pad_idx,
+        unk_idx=datasets["train"].unk_idx,
         max_sequence_length=args.max_sequence_length,
         embedding_size=args.embedding_size,
         rnn_type=args.rnn_type,
@@ -65,12 +65,12 @@ def main(args):
         json.dump(params, f, indent=4)
 
     def kl_anneal_function(anneal_function, step, k, x0):
-        if anneal_function == 'logistic':
+        if anneal_function == "logistic":
             return float(1 / (1 + np.exp(-k * (step - x0))))
-        elif anneal_function == 'linear':
+        elif anneal_function == "linear":
             return min(1, step / x0)
 
-    NLL = torch.nn.NLLLoss(ignore_index=datasets['train'].pad_idx, reduction='sum')
+    NLL = torch.nn.NLLLoss(ignore_index=datasets["train"].pad_idx, reduction="sum")
 
     def loss_fn(logp, target, length, mean, logv, anneal_function, step, k, x0):
 
@@ -156,8 +156,8 @@ def main(args):
                 if split == 'valid':
                     if 'target_sents' not in tracker:
                         tracker['target_sents'] = list()
-                    tracker['target_sents'] += idx2word(batch['target'].data, i2w=datasets['train'].get_i2w(),
-                                                        pad_idx=datasets['train'].pad_idx)
+                    tracker['target_sents'] += idx2word(batch['target'].data, i2w=datasets["train"].get_i2w(),
+                                                        pad_idx=datasets["train"].pad_idx)
                     tracker['z'] = torch.cat((tracker['z'], z.data), dim=0)
 
             print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker['ELBO'].mean()))

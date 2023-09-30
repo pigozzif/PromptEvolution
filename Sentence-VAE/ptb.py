@@ -141,11 +141,12 @@ class PTB(Dataset):
 
 class Wikipedia(Dataset):
 
-    def __init__(self, max_length=50):
+    def __init__(self, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.data_stream = load_dataset("wikipedia", "20220301.en", beam_runner="DirectRunner", streaming=True)
         self.max_length = max_length
         self.temp_data = []
+        self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
     def __len__(self):
         return 0
@@ -159,7 +160,33 @@ class Wikipedia(Dataset):
                                                  padding=True,
                                                  truncation=True,
                                                  max_length=64,
-                                                 add_special_tokens=True)
+                                                 add_special_tokens=True).input_ids
         return {"input": tokenized_sentence[:-1],
                 "target": tokenized_sentence[1:],
                 "length": len(tokenized_sentence) - 1}
+
+    @property
+    def vocab_size(self):
+        return self.word_tokenizer.vocab_size
+
+    @property
+    def pad_idx(self):
+        return self.word_tokenizer.pad_token_id
+
+    @property
+    def sos_idx(self):
+        return self.word_tokenizer.cls_token_id
+
+    @property
+    def eos_idx(self):
+        return self.word_tokenizer.sep_token_id
+
+    @property
+    def unk_idx(self):
+        return self.word_tokenizer.unk_token_id
+
+    def get_w2i(self):
+        return self.word_tokenizer.vocab
+
+    def get_i2w(self):
+        return self._idx2word
