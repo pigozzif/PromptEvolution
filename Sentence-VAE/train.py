@@ -5,12 +5,11 @@ import torch
 import argparse
 import numpy as np
 from multiprocessing import cpu_count
-# from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
 from data import PTB
-from utils import to_var, idx2word, expierment_name
+from utils import to_var, idx2word
 from model import SentenceVAE
 
 
@@ -28,7 +27,6 @@ def main(args):
             max_sequence_length=args.max_sequence_length,
             min_occ=args.min_occ
         )
-    exit()
     params = dict(
         vocab_size=datasets["train"].vocab_size,
         sos_idx=datasets["train"].sos_idx,
@@ -51,12 +49,6 @@ def main(args):
         model = model.cuda()
 
     print(model)
-
-    if args.tensorboard_logging:
-        writer = SummaryWriter(os.path.join(args.logdir, expierment_name(args, ts)))
-        writer.add_text("model", str(model))
-        writer.add_text("args", str(args))
-        writer.add_text("ts", ts)
 
     save_model_path = os.path.join(args.save_model_path, ts)
     os.makedirs(save_model_path)
@@ -139,15 +131,6 @@ def main(args):
                 # bookkeepeing
                 tracker['ELBO'] = torch.cat((tracker['ELBO'], loss.data.view(1, -1)), dim=0)
 
-                if args.tensorboard_logging:
-                    writer.add_scalar("%s/ELBO" % split.upper(), loss.item(), epoch * len(data_loader) + iteration)
-                    writer.add_scalar("%s/NLL Loss" % split.upper(), NLL_loss.item() / batch_size,
-                                      epoch * len(data_loader) + iteration)
-                    writer.add_scalar("%s/KL Loss" % split.upper(), KL_loss.item() / batch_size,
-                                      epoch * len(data_loader) + iteration)
-                    writer.add_scalar("%s/KL Weight" % split.upper(), KL_weight,
-                                      epoch * len(data_loader) + iteration)
-
                 if iteration % args.print_every == 0 or iteration + 1 == len(data_loader):
                     print("%s Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
                           % (split.upper(), iteration, len(data_loader) - 1, loss.item(), NLL_loss.item() / batch_size,
@@ -161,9 +144,6 @@ def main(args):
                     tracker['z'] = torch.cat((tracker['z'], z.data), dim=0)
 
             print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker['ELBO'].mean()))
-
-            if args.tensorboard_logging:
-                writer.add_scalar("%s-Epoch/ELBO" % split.upper(), torch.mean(tracker['ELBO']), epoch)
 
             # save a dump of all sentences and the encoded latent space
             if split == 'valid':
