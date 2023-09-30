@@ -4,13 +4,11 @@ import json
 import abc
 
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from torch.utils.data import Dataset
 from nltk.tokenize import TweetTokenizer, sent_tokenize
 from datasets import load_dataset
 from transformers import AutoTokenizer
-
-from utils import OrderedCounter
 
 
 class TextDataset(Dataset, abc.ABC):
@@ -147,7 +145,7 @@ class PTB(TextDataset):
     def _create_vocab(self):
         assert self.split == "train", "Vocabulary can only be created for training file."
         tokenizer = TweetTokenizer(preserve_case=False)
-        w2c = OrderedCounter()
+        w2c = OrderedDict()
         w2i = dict()
         i2w = dict()
         special_tokens = ["<pad>", "<unk>", "<sos>", "<eos>"]

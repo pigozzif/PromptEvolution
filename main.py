@@ -1,5 +1,5 @@
 import torch
-# from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import numpy as np
 from datasets import load_dataset
 
@@ -11,6 +11,7 @@ def testQA():
 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
     model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
+    _ = model.eval()
 
     # model_name = "t5-base"
     # tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -19,24 +20,13 @@ def testQA():
     # input_ids = tokenizer("Transform the following sentence into its passive form: I eat an apple", return_tensors="pt").input_ids
     # outputs = model.generate(input_ids)
     # print(tokenizer.decode(outputs[0], skip_special_tokens=True))
-    input_ids = tokenizer.encode("That Italian restaurant is", return_tensors="pt")
+    input_ids = tokenizer.encode("An example of a bright color is", return_tensors="pt")
     output = model.generate(input_ids, max_length=200, pad_token_id=tokenizer.eos_token_id)  # num_return_sequences=1)
     print(tokenizer.decode(output[0], skip_special_tokens=True))
 
 
 if __name__ == '__main__':
-    # testQA()
-    data_stream = load_dataset("wikipedia", "20220301.en", beam_runner="DirectRunner", streaming=True)
-    import nltk
-    nltk.download("punkt")
-    c = 0
-    for i, e in enumerate(data_stream["train"]):
-        try:
-            c += len(nltk.sent_tokenize(e["text"]))
-        except:
-            print("error")
-        print(i)
-    print(c)
+    testQA()
     # model_name = "gpt2"
     # tokenizer = GPT2Tokenizer.from_pretrained(model_name)
     # model = GPT2LMHeadModel.from_pretrained(model_name)
