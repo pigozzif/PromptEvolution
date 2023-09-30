@@ -8,8 +8,7 @@ from multiprocessing import cpu_count
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
-from data import PTB
-from utils import to_var, idx2word
+from utils import to_var, idx2word, create_dataset
 from model import SentenceVAE
 
 
@@ -20,13 +19,7 @@ def main(args):
 
     datasets = OrderedDict()
     for split in splits:
-        datasets[split] = PTB(
-            data_dir=args.data_dir,
-            split=split,
-            create_data=args.create_data,
-            max_sequence_length=args.max_sequence_length,
-            min_occ=args.min_occ
-        )
+        datasets[split] = create_dataset(args=args, split=split)
     params = dict(
         vocab_size=datasets["train"].vocab_size,
         sos_idx=datasets["train"].sos_idx,
@@ -163,6 +156,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--dataset", type=str, default="wikipedia")
     parser.add_argument('--data_dir', type=str, default='data')
     parser.add_argument('--create_data', action='store_true')
     parser.add_argument('--max_sequence_length', type=int, default=60)

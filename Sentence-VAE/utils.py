@@ -2,9 +2,12 @@ import torch
 import numpy as np
 from collections import Counter, OrderedDict
 
+from data import PTB, Wikipedia
+
 
 class OrderedCounter(Counter, OrderedDict):
     """Counter that remembers the order elements are first encountered"""
+
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
 
@@ -19,7 +22,7 @@ def to_var(x):
 
 
 def idx2word(idx, i2w, pad_idx):
-    sent_str = [str()]*len(idx)
+    sent_str = [str()] * len(idx)
     for i, sent in enumerate(idx):
         for word_id in sent:
             if word_id == pad_idx:
@@ -30,11 +33,10 @@ def idx2word(idx, i2w, pad_idx):
 
 
 def interpolate(start, end, steps):
-
     interpolation = np.zeros((start.shape[0], steps + 2))
 
     for dim, (s, e) in enumerate(zip(start, end)):
-        interpolation[dim] = np.linspace(s, e, steps+2)
+        interpolation[dim] = np.linspace(s, e, steps + 2)
 
     return interpolation.T
 
@@ -54,5 +56,18 @@ def expierment_name(args, ts):
     exp_name += "K={}_".format(args.k)
     exp_name += "X0=%i_" % args.x0
     exp_name += "TS=%s" % ts
-
     return exp_name
+
+
+def create_dataset(args, split):
+    if args.dataset == "ptb":
+        return PTB(
+            data_dir=args.data_dir,
+            split=split,
+            create_data=args.create_data,
+            max_sequence_length=args.max_sequence_length,
+            min_occ=args.min_occ
+        )
+    elif args.dataset == "wikipedia":
+        return Wikipedia()
+    raise ValueError("Invalid dataset: {}".format(args.dataset))
