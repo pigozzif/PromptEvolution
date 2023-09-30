@@ -13,28 +13,28 @@ from transformers import AutoTokenizer
 
 class TextDataset(Dataset, abc.ABC):
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def vocab_size(self):
         pass
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def pad_idx(self):
         pass
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def sos_idx(self):
         pass
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def eos_idx(self):
         pass
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def unk_idx(self):
         pass
 
