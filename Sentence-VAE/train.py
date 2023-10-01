@@ -21,10 +21,10 @@ def main(args):
     for split in splits:
         datasets[split] = create_dataset(args=args, split=split)
     params = dict(
-        vocab_size=datasets["train"].vocab_size,
+        vocab_size=datasets["train"].vocab_size(),
         sos_idx=datasets["train"].sos_idx,
         eos_idx=datasets["train"].eos_idx,
-        pad_idx=datasets["train"].pad_idx,
+        pad_idx=datasets["train"].pad_idx(),
         unk_idx=datasets["train"].unk_idx,
         max_sequence_length=args.max_sequence_length,
         embedding_size=args.embedding_size,
@@ -46,16 +46,13 @@ def main(args):
     save_model_path = os.path.join(args.save_model_path, ts)
     os.makedirs(save_model_path)
 
-    with open(os.path.join(save_model_path, 'model_params.json'), 'w') as f:
-        json.dump(params, f, indent=4)
-
     def kl_anneal_function(anneal_function, step, k, x0):
         if anneal_function == "logistic":
             return float(1 / (1 + np.exp(-k * (step - x0))))
         elif anneal_function == "linear":
             return min(1, step / x0)
 
-    NLL = torch.nn.NLLLoss(ignore_index=datasets["train"].pad_idx, reduction="sum")
+    NLL = torch.nn.NLLLoss(ignore_index=datasets["train"].pad_idx(), reduction="sum")
 
     def loss_fn(logp, target, length, mean, logv, anneal_function, step, k, x0):
 
@@ -83,7 +80,7 @@ def main(args):
             data_loader = DataLoader(
                 dataset=datasets[split],
                 batch_size=args.batch_size,
-                shuffle=split == 'train',
+                shuffle=split == "train",
                 num_workers=cpu_count(),
                 pin_memory=torch.cuda.is_available()
             )
@@ -91,14 +88,13 @@ def main(args):
             tracker = defaultdict(tensor)
 
             # Enable/Disable Dropout
-            if split == 'train':
+            if split == "train":
                 model.train()
             else:
                 model.eval()
 
             for iteration, batch in enumerate(data_loader):
-
-                batch_size = batch['input'].size(0)
+                batch_size = batch["input"].size(0)
 
                 for k, v in batch.items():
                     if torch.is_tensor(v):
@@ -133,7 +129,7 @@ def main(args):
                     if 'target_sents' not in tracker:
                         tracker['target_sents'] = list()
                     tracker['target_sents'] += idx2word(batch['target'].data, i2w=datasets["train"].get_i2w(),
-                                                        pad_idx=datasets["train"].pad_idx)
+                                                        pad_idx=datasets["train"].pad_idx())
                     tracker['z'] = torch.cat((tracker['z'], z.data), dim=0)
 
             print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker['ELBO'].mean()))
@@ -153,7 +149,7 @@ def main(args):
                 print("Model saved at %s" % checkpoint_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--dataset", type=str, default="wikipedia")

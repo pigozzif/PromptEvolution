@@ -28,12 +28,12 @@ class SentenceVAE(nn.Module):
         self.word_dropout_rate = word_dropout
         self.embedding_dropout = nn.Dropout(p=embedding_dropout)
 
-        if rnn_type == 'rnn':
+        if rnn_type == "rnn":
             rnn = nn.RNN
-        elif rnn_type == 'gru':
+        elif rnn_type == "gru":
             rnn = nn.GRU
-        # elif rnn_type == 'lstm':
-        #     rnn = nn.LSTM
+        elif rnn_type == "lstm":
+            rnn = nn.LSTM
         else:
             raise ValueError()
 

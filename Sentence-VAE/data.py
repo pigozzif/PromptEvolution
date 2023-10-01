@@ -4,21 +4,29 @@ import json
 import abc
 
 import numpy as np
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 from torch.utils.data import Dataset
 from nltk.tokenize import TweetTokenizer, sent_tokenize
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
 
+class OrderedCounter(Counter, OrderedDict):
+    """Counter that remembers the order elements are first encountered"""
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
+
+    def __reduce__(self):
+        return self.__class__, (OrderedDict(self),)
+
+
 class TextDataset(Dataset, abc.ABC):
 
-    @property
     @abc.abstractmethod
     def vocab_size(self):
         pass
 
-    @property
     @abc.abstractmethod
     def pad_idx(self):
         pass
@@ -83,7 +91,7 @@ class PTB(TextDataset):
         return len(self.w2i)
 
     def pad_idx(self):
-        return self.w2i['<pad>']
+        return self.w2i["<pad>"]
 
     def sos_idx(self):
         return self.w2i['<sos>']
@@ -134,7 +142,7 @@ class PTB(TextDataset):
                 inp = [self.w2i.get(w, self.w2i["<unk>"]) for w in inp]
                 target = [self.w2i.get(w, self.w2i["<unk>"]) for w in target]
                 idx = len(data)
-                data[idx]["inp"] = inp
+                data[idx]["input"] = inp
                 data[idx]["target"] = target
                 data[idx]["length"] = length
         with io.open(os.path.join(self.data_dir, self.data_file), "wb") as data_file:
@@ -145,7 +153,7 @@ class PTB(TextDataset):
     def _create_vocab(self):
         assert self.split == "train", "Vocabulary can only be created for training file."
         tokenizer = TweetTokenizer(preserve_case=False)
-        w2c = OrderedDict()
+        w2c = OrderedCounter()
         w2i = dict()
         i2w = dict()
         special_tokens = ["<pad>", "<unk>", "<sos>", "<eos>"]
@@ -191,8 +199,8 @@ class Wikipedia(TextDataset):
                                                  truncation=True,
                                                  max_length=64,
                                                  add_special_tokens=True).input_ids
-        return {"input": tokenized_sentence[:-1],
-                "target": tokenized_sentence[1:],
+        return {"input": np.asarray(tokenized_sentence[:-1]),
+                "target": np.asarray(tokenized_sentence[1:]),
                 "length": len(tokenized_sentence) - 1}
 
     def vocab_size(self):
