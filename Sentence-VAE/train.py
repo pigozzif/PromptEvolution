@@ -22,10 +22,10 @@ def main(args):
         datasets[split] = create_dataset(args=args, split=split)
     params = dict(
         vocab_size=datasets["train"].vocab_size(),
-        sos_idx=datasets["train"].sos_idx,
-        eos_idx=datasets["train"].eos_idx,
+        sos_idx=datasets["train"].sos_idx(),
+        eos_idx=datasets["train"].eos_idx(),
         pad_idx=datasets["train"].pad_idx(),
-        unk_idx=datasets["train"].unk_idx,
+        unk_idx=datasets["train"].unk_idx(),
         max_sequence_length=args.max_sequence_length,
         embedding_size=args.embedding_size,
         rnn_type=args.rnn_type,

@@ -31,17 +31,14 @@ class TextDataset(Dataset, abc.ABC):
     def pad_idx(self):
         pass
 
-    @property
     @abc.abstractmethod
     def sos_idx(self):
         pass
 
-    @property
     @abc.abstractmethod
     def eos_idx(self):
         pass
 
-    @property
     @abc.abstractmethod
     def unk_idx(self):
         pass
