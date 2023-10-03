@@ -5,9 +5,6 @@ import random
 induce_data_path = os.path.join(os.path.dirname(__file__), "raw/induce/")
 eval_data_path = os.path.join(os.path.dirname(__file__), "raw/execute/")
 
-# Get a list of tasks (by looking at the names of the files in the induced directory)
-tasks = [f.split('.')[0] for f in os.listdir(induce_data_path)]
-
 
 def load_data(category, task):
     base_path = induce_data_path if category == "induce" else eval_data_path
