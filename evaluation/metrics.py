@@ -1,105 +1,92 @@
-import numpy as np
+import re
+import string
+from collections import Counter
 
-# from automatic_prompt_engineer import data, llm, evaluate
-import split
-import utility
-
-
-def get_query(prompt, eval_template, input_, demo_data, demos_template):
-    demos = demos_template.fill(demo_data)
-    query = eval_template.fill(prompt=prompt,
-                               input=input_,
-                               output='',
-                               full_demo=demos)
-    return query
+TASK_TO_METRIC = {"common_concept": "f1", "informal_to_formal": "f1", "orthography_starts_with": "es",
+                  "taxonomy_animal": "es", "synonyms": "contains"}
+default_metric = "em"
 
 
-def exec_accuracy_evaluator(prompts, eval_template, eval_data, demos_template, few_shot_data, config):
-    queries = []
-    answers = []
-    for prompt in prompts:
-        subsampled_data = split.subsample_data(
-            eval_data, config["num_samples"])
-        for d in zip(*subsampled_data):
-            input_, output_ = d
-            demo_data = split.subsample_data(
-                few_shot_data, config["num_few_shot"])
-            query = get_query(
-                prompt, eval_template, input_, demo_data, demos_template)
-            queries.append(query)
-            answers.append(output_)
+def normalize_prediction(prediction, lowercase=True):
+    prediction = prediction.replace(" and ", " ")
+    prediction = prediction.replace("Sentence 1:", " ")
+    prediction = prediction.replace("Sentence 2:", " ")
+    prediction = prediction.strip()
+    prediction = prediction.split("\n")[0]
+    prediction = prediction.split(".")[0]
 
-    # Instantiate the LLM
-    model = llm.model_from_config(config["model"])
-    model_outputs = model.generate_text(queries, 1)
+    if lowercase:
+        prediction = prediction.lower()
 
-    task = config["task"]
-    metric = utility.TASK_TO_METRIC.get(task, utility.default_metric)
+    # remove punctuation
+    prediction = prediction.replace("-", " ")
+    prediction = prediction.translate(
+        str.maketrans("", "", string.punctuation))
 
-    print(f'Using metric "{metric}" for task "{task}"...')
-
-    if metric == "f1":
-        score_fn = utility.get_multi_answer_f1
-    elif metric == "es":
-        score_fn = utility.get_multi_answer_exact_set
-    elif metric == "contains":
-        score_fn = utility.get_multi_answer_contains
-    elif metric == "em":
-        score_fn = utility.get_multi_answer_em
-    else:
-        raise ValueError("Invalid metric: {}".format(metric))
-
-    scores = []
-    for prediction, ans_ in zip(model_outputs, answers):
-        score = score_fn(prediction, ans_)
-        scores.append(score)
-
-    # Reshape the scores so that it is num_prompts x num_samples
-    scores = np.array(scores).reshape(len(prompts), config["num_samples"])
-
-    res = ExecAccuracyEvaluationResult(prompts, scores)
-    return res
+    return prediction
 
 
-class ExecAccuracyEvaluationResult(object):
+def get_f1_score(prediction, ground_truth):
+    prediction_tokens = normalize_prediction(
+        prediction, lowercase=True).split()
+    ground_truth_tokens = normalize_prediction(
+        ground_truth, lowercase=True).split()
+    common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
+    num_same = sum(common.values())
+    if num_same == 0:
+        return 0
+    precision = 1.0 * num_same / len(prediction_tokens)
+    recall = 1.0 * num_same / len(ground_truth_tokens)
+    f1 = (2 * precision * recall) / (precision + recall)
+    return f1
 
-    def __init__(self, prompts, scores):
-        self.prompts = prompts
-        self.scores = scores
 
-    def _agg_scores(self, method):
-        """For each prompt, compute a statistic of the scores (e.g., mean, median)"""
-        if method == "mean":
-            return [np.mean(s) for s in self.scores]
-        elif method == "median":
-            return [np.median(s) for s in self.scores]
-        elif method == "std":
-            return [np.std(s) for s in self.scores]
-        elif method == "max":
-            return [np.max(s) for s in self.scores]
-        elif method == "min":
-            return [np.min(s) for s in self.scores]
-        elif method == "iqm":
-            return [np.mean(np.percentile(lps, [25, 75])) for lps in self.scores]
-        else:
-            raise ValueError("Invalid method: {}".format(method))
+def get_em_score(prediction, ground_truth):
+    prediction_normalized = normalize_prediction(prediction, lowercase=True)
+    ground_truth_normalized = normalize_prediction(
+        ground_truth, lowercase=True)
+    return prediction_normalized == ground_truth_normalized
 
-    def sorted(self, method="default"):
-        if method == "default":
-            scores = self._agg_scores("mean")
-        else:
-            scores = self._agg_scores(method)
-        # Sort prompts by score
-        sorted_prompts = [p for _, p in sorted(zip(scores, self.prompts))]
-        sorted_scores = sorted(scores)
-        # Reverse both and convert to lists
-        sorted_prompts = list(reversed(sorted_prompts))
-        sorted_scores = list(reversed(sorted_scores))
-        return sorted_prompts, sorted_scores
 
-    def in_place(self, method="default"):
-        if method == "default":
-            scores = self._agg_scores("mean")
-        else:
-            scores = self._agg_scores(method)
-        return self.prompts, scores
+def get_exact_set_score(prediction, ground_truth):
+    prediction_normalized = normalize_prediction(
+        prediction, lowercase=True).split()
+    ground_truth_normalized = normalize_prediction(
+        ground_truth, lowercase=True).split()
+    return int(set(prediction_normalized) == set(ground_truth_normalized))
+
+
+def get_contains_score(prediction, ground_truth):
+    prediction_normalized = normalize_prediction(prediction, lowercase=True)
+    ground_truth_normalized = normalize_prediction(
+        ground_truth, lowercase=True)
+    if re.search(r"\b({0})\b".format(ground_truth_normalized), prediction_normalized):
+        return 1
+
+
+def get_multi_answer_em(prediction, answers):
+    for answer in answers:
+        if get_em_score(prediction, answer) == 1:
+            return 1
+    return 0
+
+
+def get_multi_answer_f1(prediction, answers):
+    f1_scores = []
+    for answer in answers:
+        f1_scores.append(get_f1_score(prediction, answer))
+    return max(f1_scores)
+
+
+def get_multi_answer_exact_set(prediction, answers):
+    for answer in answers:
+        if get_exact_set_score(prediction, answer) == 1:
+            return 1
+    return 0
+
+
+def get_multi_answer_contains(prediction, answers):
+    for answer in answers:
+        if get_contains_score(prediction, answer) == 1:
+            return 1
+    return 0

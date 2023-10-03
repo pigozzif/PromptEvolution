@@ -2,10 +2,8 @@ import os
 import json
 import random
 
-induce_data_path = os.path.join(os.path.dirname(__file__),
-                                "../../PromptEvolution/data/instruction_induction/raw/induce/")
-eval_data_path = os.path.join(os.path.dirname(__file__),
-                            "../../PromptEvolution/data/instruction_induction/raw/execute/")
+induce_data_path = os.path.join(os.path.dirname(__file__), "raw/induce/")
+eval_data_path = os.path.join(os.path.dirname(__file__), "raw/execute/")
 
 # Get a list of tasks (by looking at the names of the files in the induced directory)
 tasks = [f.split('.')[0] for f in os.listdir(induce_data_path)]
