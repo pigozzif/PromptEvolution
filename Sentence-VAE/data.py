@@ -51,7 +51,7 @@ class TextDataset(Dataset, abc.ABC):
 class Wikipedia(TextDataset):
 
     def __init__(self, train, val_split=0.1, max_length=64):
-        nltk.downlaod("punkt")
+        nltk.download("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.train = train
         self.split = val_split if not train else 1 - val_split
@@ -105,7 +105,7 @@ class Wikipedia(TextDataset):
 class BookCorpus(TextDataset):
 
     def __init__(self, train, val_split=0.2, max_length=64):
-        nltk.downlaod("punkt")
+        nltk.download("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.split = val_split if not train else 1 - val_split
         self.data = load_dataset("bookcorpus")["train"]
@@ -149,7 +149,7 @@ class BookCorpus(TextDataset):
 class MiniPile(TextDataset):
 
     def __init__(self, split, max_length=64):
-        nltk.downlaod("punkt")
+        nltk.download("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         if split == "valid":
             split += "ation"
