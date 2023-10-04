@@ -161,7 +161,7 @@ if __name__ == "__main__":
     assert args.anneal_function in ["logistic", "linear"]
     assert 0 <= args.word_dropout <= 1
     os.makedirs(args.log_dir)
-    listener = FileListener(file_name=os.path.join(args.log_dir, ".".join([args.dataset, args.s, "txt"])),
+    listener = FileListener(file_name=os.path.join(args.log_dir, ".".join([args.dataset, str(args.s), "txt"])),
                             header=["epoch", "split", "batch.loss", "batch.nll.loss", "batch.kl.loss",
                                     "batch.kl.weight", "elbo.mean"])
     train_vae(args=args, listener=listener)
