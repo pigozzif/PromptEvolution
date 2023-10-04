@@ -14,15 +14,8 @@ Training was stopped after 4 epochs. The true ELBO was optimized for approximate
 
 ## Setting up
 ```
-wget http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz
-tar -xf simple-examples.tgz
-mkdir data
-mv simple-examples/data/ptb.train.txt data
-mv simple-examples/data/ptb.test.txt data
-mv simple-examples/data/ptb.valid.txt data
-rm -rf simple-examples*
-mkdir models
 pip install -r Sentence-VAE/requirements.txt
+pip install git+https://github.com/huggingface/transformers
 ```
 
 ## Training
