@@ -256,7 +256,7 @@ class BookCorpus(TextDataset):
         return int(self.__len() * self.split)
 
     def __getitem__(self, item):
-        return self._parse_sentence(sentence=self.data[self.shuffled[item + self.c]]["text"])
+        return self._parse_sentence(sentence=self.data[self.idx[item + self.c]]["text"])
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
