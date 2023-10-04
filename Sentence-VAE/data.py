@@ -2,6 +2,7 @@ import os
 import io
 import json
 import abc
+import random
 
 import numpy as np
 from collections import defaultdict, OrderedDict, Counter
@@ -32,6 +33,7 @@ class TextDataset(Dataset, abc.ABC):
         return {"input": np.asarray(tokenized_sentence[:-1]),
                 "target": np.asarray(tokenized_sentence[1:]),
                 "length": len(tokenized_sentence) - 1}
+
     @abc.abstractmethod
     def vocab_size(self):
         pass
@@ -185,21 +187,34 @@ class PTB(TextDataset):
 
 class Wikipedia(TextDataset):
 
-    def __init__(self, max_length=64):
+    def __init__(self, train, val_split=0.1, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.train = train
+        self.split = val_split if not train else 1 - val_split
         self.data_stream = load_dataset("wikipedia", "20220301.en", beam_runner="DirectRunner", streaming=True)
         self.max_length = max_length
+        self.idx = set(random.sample(range(self.__len()), len(self)))
+        self.c = 0
         self.temp_data = []
         self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
-    def __len__(self):
+    def __len(self):
         return 138151688
 
+    def __len__(self):
+        return int(self.__len() * self.split)
+
     def __getitem__(self, item):
-        if not self.temp_data:
-            self.temp_data = next(iter(self.data_stream["train"]))["text"]
-            self.temp_data = sent_tokenize(self.temp_data)
-        return self._parse_sentence(sentence=self.temp_data.pop(0))
+        while True:
+            if not self.temp_data:
+                self.temp_data = next(iter(self.data_stream["train"]))["text"]
+                self.temp_data = sent_tokenize(self.temp_data)
+            next_sentence = self.temp_data.pop(0)
+            if self.c in self.idx:
+                self.c += 1
+                break
+            self.c += 1
+        return self._parse_sentence(sentence=next_sentence)
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
@@ -225,17 +240,30 @@ class Wikipedia(TextDataset):
 
 class BookCorpus(TextDataset):
 
-    def __init__(self, max_length=64):
+    def __init__(self, train, val_split=0.1, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.train = train
+        self.split = val_split if not train else 1 - val_split
         self.data_stream = load_dataset("bookcorpus", streaming=True)
         self.max_length = max_length
+        self.idx = set(random.sample(range(self.__len()), len(self)))
+        self.c = 0
         self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
-    def __len__(self):
+    def __len(self):
         return 74004228
 
+    def __len__(self):
+        return int(self.__len() * self.split)
+
     def __getitem__(self, item):
-        return self._parse_sentence(sentence=next(iter(self.data_stream["train"]))["text"])
+        while True:
+            next_sentence = next(iter(self.data_stream["train"]))
+            if self.c in self.idx:
+                self.c += 1
+                break
+            self.c += 1
+        return self._parse_sentence(sentence=next_sentence["text"])
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size

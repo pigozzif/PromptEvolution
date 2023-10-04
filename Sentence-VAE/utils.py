@@ -58,7 +58,7 @@ def create_dataset(args, split):
             min_occ=args.min_occ
         )
     elif args.dataset == "wikipedia":
-        return Wikipedia()
+        return Wikipedia(train=split == "train")
     elif args.dataset == "bc":
-        return BookCorpus()
+        return BookCorpus(train=split == "train")
     raise ValueError("Invalid dataset: {}".format(args.dataset))

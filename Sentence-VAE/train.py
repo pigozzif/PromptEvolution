@@ -1,10 +1,8 @@
 import os
-import json
 import time
 import torch
 import argparse
 import numpy as np
-from multiprocessing import cpu_count
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
@@ -40,6 +38,9 @@ def main(args):
 
     if torch.cuda.is_available():
         model = model.cuda()
+        print("Training on GPU")
+    else:
+        print("Training on CPU")
 
     print(model)
 
@@ -100,7 +101,7 @@ def main(args):
                                                        args.x0)
                 loss = (NLL_loss + KL_weight * KL_loss) / batch_size
                 # backward + optimization
-                if split == 'train':
+                if split == "train":
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
