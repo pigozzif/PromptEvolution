@@ -89,7 +89,6 @@ def main(args):
             else:
                 model.eval()
             for iteration, batch in enumerate(data_loader):
-                print(iteration, batch.shape)
                 batch_size = batch["input"].size(0)
                 for k, v in batch.items():
                     if torch.is_tensor(v):

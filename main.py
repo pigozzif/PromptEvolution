@@ -18,9 +18,4 @@ def testQA():
 
 
 if __name__ == "__main__":
-    # testQA()
-    print(AutoTokenizer.from_pretrained("bert-base-uncased")("what are you doing? and now",
-                                                             padding="max_length",
-                                                             truncation=True,
-                                                             max_length=64,
-                                                             add_special_tokens=True).input_ids)
+    testQA()
