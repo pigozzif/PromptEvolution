@@ -46,7 +46,7 @@ def train_vae(args, listener):
     print(model)
 
     save_model_path = os.path.join(args.save_model_path, ts)
-    os.makedirs(save_model_path)
+    os.makedirs(save_model_path, exist_ok=True)
 
     def kl_anneal_function(anneal_function, s, kl_w, x0):
         if anneal_function == "logistic":
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     assert arguments.rnn_type in ["rnn", "lstm", "gru"]
     assert arguments.anneal_function in ["logistic", "linear"]
     assert 0 <= arguments.word_dropout <= 1
-    os.makedirs(arguments.log_dir)
+    os.makedirs(arguments.log_dir, exist_ok=True)
     lis = FileListener(
         file_name=os.path.join(arguments.log_dir, ".".join([arguments.dataset, str(arguments.s), "txt"])),
         header=["epoch", "split", "batch.loss", "batch.nll.loss", "batch.kl.loss",
