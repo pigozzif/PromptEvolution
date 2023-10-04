@@ -48,28 +48,28 @@ def train_vae(args, listener):
     save_model_path = os.path.join(args.save_model_path, ts)
     os.makedirs(save_model_path)
 
-    def kl_anneal_function(anneal_function, step, k, x0):
+    def kl_anneal_function(anneal_function, s, kl_w, x0):
         if anneal_function == "logistic":
-            return float(1 / (1 + np.exp(-k * (step - x0))))
+            return float(1 / (1 + np.exp(-kl_w * (s - x0))))
         elif anneal_function == "linear":
-            return min(1, step / x0)
+            return min(1, s / x0)
 
-    NLL = torch.nn.NLLLoss(ignore_index=datasets["train"].pad_idx(), reduction="sum")
+    nll = torch.nn.NLLLoss(ignore_index=datasets["train"].pad_idx(), reduction="sum")
 
-    def loss_fn(logp, target, length, mean, logv, anneal_function, step, k, x0):
+    def loss_fn(log_p, target, length, m, log_v, anneal_function, s, old_k, x0):
 
         # cut-off unnecessary padding from target, and flatten
         target = target[:, :torch.max(length).item()].contiguous().view(-1)
-        logp = logp.view(-1, logp.size(2))
+        log_p = log_p.view(-1, log_p.size(2))
 
         # Negative Log Likelihood
-        NLL_loss = NLL(logp, target)
+        nll_l = nll(log_p, target)
 
         # KL Divergence
-        KL_loss = -0.5 * torch.sum(1 + logv - mean.pow(2) - logv.exp())
-        KL_weight = kl_anneal_function(anneal_function, step, k, x0)
+        kl_l = -0.5 * torch.sum(1 + log_v - m.pow(2) - log_v.exp())
+        kl_w = kl_anneal_function(anneal_function, s, old_k, x0)
 
-        return NLL_loss, KL_loss, KL_weight
+        return nll_l, kl_l, kl_w
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -97,10 +97,10 @@ def train_vae(args, listener):
                 # Forward pass
                 logp, mean, logv, z = model(batch["input"], batch["length"])
                 # loss calculation
-                NLL_loss, KL_loss, KL_weight = loss_fn(logp, batch['target'],
+                nll_loss, kl_loss, kl_weight = loss_fn(logp, batch['target'],
                                                        batch['length'], mean, logv, args.anneal_function, step, args.k,
                                                        args.x0)
-                loss = (NLL_loss + KL_weight * KL_loss) / batch_size
+                loss = (nll_loss + kl_weight * kl_loss) / batch_size
                 # backward + optimization
                 if split == "train":
                     optimizer.zero_grad()
@@ -109,13 +109,13 @@ def train_vae(args, listener):
                     step += 1
                 # bookkeeping
                 tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
-                listener.listen({"epoch": epoch,
-                                 "split": split,
-                                 "batch.loss": loss.item(),
-                                 "batch.nll.loss": NLL_loss.item(),
-                                 "batch.kl.loss": KL_loss.item(),
-                                 "batch.kl.weight": KL_weight,
-                                 "elbo.mean": tracker["ELBO"].mean()})
+                listener.listen(**{"epoch": epoch,
+                                   "split": split,
+                                   "batch.loss": loss.item(),
+                                   "batch.nll.loss": nll_loss.item(),
+                                   "batch.kl.loss": kl_loss.item(),
+                                   "batch.kl.weight": kl_weight,
+                                   "elbo.mean": tracker["ELBO"].mean()})
 
         # save checkpoint
         checkpoint_path = os.path.join(save_model_path, "E{}.pytorch".format(epoch))
@@ -152,16 +152,17 @@ if __name__ == "__main__":
     parser.add_argument("-ld", "--log_dir", type=str, default="output")
     parser.add_argument("-bin", "--save_model_path", type=str, default="models")
 
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
-    args.rnn_type = args.rnn_type.lower()
-    args.anneal_function = args.anneal_function.lower()
+    arguments.rnn_type = arguments.rnn_type.lower()
+    arguments.anneal_function = arguments.anneal_function.lower()
 
-    assert args.rnn_type in ["rnn", "lstm", "gru"]
-    assert args.anneal_function in ["logistic", "linear"]
-    assert 0 <= args.word_dropout <= 1
-    os.makedirs(args.log_dir)
-    listener = FileListener(file_name=os.path.join(args.log_dir, ".".join([args.dataset, str(args.s), "txt"])),
-                            header=["epoch", "split", "batch.loss", "batch.nll.loss", "batch.kl.loss",
-                                    "batch.kl.weight", "elbo.mean"])
-    train_vae(args=args, listener=listener)
+    assert arguments.rnn_type in ["rnn", "lstm", "gru"]
+    assert arguments.anneal_function in ["logistic", "linear"]
+    assert 0 <= arguments.word_dropout <= 1
+    os.makedirs(arguments.log_dir)
+    lis = FileListener(
+        file_name=os.path.join(arguments.log_dir, ".".join([arguments.dataset, str(arguments.s), "txt"])),
+        header=["epoch", "split", "batch.loss", "batch.nll.loss", "batch.kl.loss",
+                "batch.kl.weight", "elbo.mean"])
+    train_vae(args=arguments, listener=lis)
