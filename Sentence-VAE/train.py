@@ -89,6 +89,7 @@ def main(args):
             else:
                 model.eval()
             for iteration, batch in enumerate(data_loader):
+                print(iteration, batch.shape)
                 batch_size = batch["input"].size(0)
                 for k, v in batch.items():
                     if torch.is_tensor(v):
@@ -106,7 +107,7 @@ def main(args):
                     loss.backward()
                     optimizer.step()
                     step += 1
-                # bookkeepeing
+                # bookkeeping
                 tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
                 if iteration % args.print_every == 0 or iteration + 1 == len(data_loader):
                     print("%s Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--dataset", type=str, default="wikipedia")
-    parser.add_argument('--data_dir', type=str, default='data')
+    parser.add_argument("--s", type=int, default=0)
     parser.add_argument('--create_data', action='store_true')
     parser.add_argument('--max_sequence_length', type=int, default=60)
     parser.add_argument('--min_occ', type=int, default=1)

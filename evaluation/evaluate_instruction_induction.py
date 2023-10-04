@@ -49,13 +49,7 @@ class InstructionInductionEvaluator(object):
         scores = []
         for i, g in zip(self.test_data[0], self.test_data[1]):
             query = self.tokenizer(self._fill_template(prompt, i), return_tensors="pt")
-            query_length = len(query.input_ids)
-            output = self.tokenizer.decode(self.model.generate(**query,
-                                                               num_beams=5,
-                                                               max_new_tokens=query_length + 1,  # TODO: check
-                                                               early_stopping=True,
-                                                               no_repeat_ngram_size=2)[0],
-                                           skip_special_tokens=True)
+            output = self.tokenizer.decode(self.model.generate(**query)[0], skip_special_tokens=True)
             score = self.score_fn(output, self.eval_template.replace(self.OUTPUT_TOKEN, g))
             scores.append(score)
         return np.mean(scores)
