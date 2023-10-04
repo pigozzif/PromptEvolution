@@ -13,9 +13,9 @@ from model import SentenceVAE
 
 
 def main(args):
-    ts = time.strftime('%Y-%b-%d-%H:%M:%S', time.gmtime())
+    ts = time.strftime("%Y-%b-%d-%H:%M:%S", time.gmtime())
 
-    splits = ['train', 'valid'] + (['test'] if args.test else [])
+    splits = ["train", "valid"] + (["test"] if args.test else [])
 
     datasets = OrderedDict()
     for split in splits:
@@ -74,9 +74,7 @@ def main(args):
     tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.Tensor
     step = 0
     for epoch in range(args.epochs):
-
         for split in splits:
-
             data_loader = DataLoader(
                 dataset=datasets[split],
                 batch_size=args.batch_size,
@@ -84,69 +82,48 @@ def main(args):
                 num_workers=cpu_count(),
                 pin_memory=torch.cuda.is_available()
             )
-
             tracker = defaultdict(tensor)
-
             # Enable/Disable Dropout
             if split == "train":
                 model.train()
             else:
                 model.eval()
-
             for iteration, batch in enumerate(data_loader):
                 batch_size = batch["input"].size(0)
-
                 for k, v in batch.items():
                     if torch.is_tensor(v):
                         batch[k] = to_var(v)
-
                 # Forward pass
-                logp, mean, logv, z = model(batch['input'], batch['length'])
-
+                logp, mean, logv, z = model(batch["input"], batch["length"])
                 # loss calculation
                 NLL_loss, KL_loss, KL_weight = loss_fn(logp, batch['target'],
                                                        batch['length'], mean, logv, args.anneal_function, step, args.k,
                                                        args.x0)
-
                 loss = (NLL_loss + KL_weight * KL_loss) / batch_size
-
                 # backward + optimization
                 if split == 'train':
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                     step += 1
-
                 # bookkeepeing
-                tracker['ELBO'] = torch.cat((tracker['ELBO'], loss.data.view(1, -1)), dim=0)
-
+                tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
                 if iteration % args.print_every == 0 or iteration + 1 == len(data_loader):
                     print("%s Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
                           % (split.upper(), iteration, len(data_loader) - 1, loss.item(), NLL_loss.item() / batch_size,
                              KL_loss.item() / batch_size, KL_weight))
-
-                if split == 'valid':
-                    if 'target_sents' not in tracker:
-                        tracker['target_sents'] = list()
-                    tracker['target_sents'] += idx2word(batch['target'].data, i2w=datasets["train"].get_i2w(),
+                if split == "valid":
+                    if "target_sents" not in tracker:
+                        tracker["target_sents"] = list()
+                    tracker["target_sents"] += idx2word(batch["target"].data, i2w=datasets["train"].get_i2w(),
                                                         pad_idx=datasets["train"].pad_idx())
-                    tracker['z'] = torch.cat((tracker['z'], z.data), dim=0)
+                    tracker["z"] = torch.cat((tracker["z"], z.data), dim=0)
+            print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker["ELBO"].mean()))
 
-            print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker['ELBO'].mean()))
-
-            # save a dump of all sentences and the encoded latent space
-            if split == 'valid':
-                dump = {'target_sents': tracker['target_sents'], 'z': tracker['z'].tolist()}
-                if not os.path.exists(os.path.join('dumps', ts)):
-                    os.makedirs('dumps/' + ts)
-                with open(os.path.join('dumps/' + ts + '/valid_E%i.json' % epoch), 'w') as dump_file:
-                    json.dump(dump, dump_file)
-
-            # save checkpoint
-            if split == 'train':
-                checkpoint_path = os.path.join(save_model_path, "E%i.pytorch" % epoch)
-                torch.save(model.state_dict(), checkpoint_path)
-                print("Model saved at %s" % checkpoint_path)
+    # save checkpoint
+    checkpoint_path = os.path.join(save_model_path, "final.pytorch")
+    torch.save(model.state_dict(), checkpoint_path)
+    print("Model saved at {}".format(checkpoint_path))
 
 
 if __name__ == "__main__":
@@ -186,8 +163,8 @@ if __name__ == "__main__":
     args.rnn_type = args.rnn_type.lower()
     args.anneal_function = args.anneal_function.lower()
 
-    assert args.rnn_type in ['rnn', 'lstm', 'gru']
-    assert args.anneal_function in ['logistic', 'linear']
+    assert args.rnn_type in ["rnn", "lstm", "gru"]
+    assert args.anneal_function in ["logistic", "linear"]
     assert 0 <= args.word_dropout <= 1
 
     main(args)
