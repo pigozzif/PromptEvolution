@@ -232,7 +232,7 @@ class BookCorpus(TextDataset):
         self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
     def __len__(self):
-        return 0
+        return 74004228
 
     def __getitem__(self, item):
         return self._parse_sentence(sentence=next(iter(self.data_stream["train"]))["text"])
