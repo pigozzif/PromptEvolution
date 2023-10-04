@@ -6,7 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
-from ..listener import FileListener
+from listener import FileListener
 from utils import to_var, create_dataset
 from model import SentenceVAE
 
