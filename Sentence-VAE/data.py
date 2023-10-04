@@ -239,15 +239,13 @@ class Wikipedia(TextDataset):
 
 class BookCorpus(TextDataset):
 
-    def __init__(self, seed, train, val_split=0.1, max_length=64):
+    def __init__(self, train, val_split=0.1, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        # self.train = train
         self.split = val_split if not train else 1 - val_split
-        self.data = load_dataset("bookcorpus")["train"]#[np.random.choice(np.arange(self.__len()), size=len(self), replace=False)]
-        self.data = self.data.shuffle(seed=seed)
-        # self.data = self.data.flatten_indices()
+        self.data = load_dataset("bookcorpus")["train"]
         self.max_length = max_length
-        # self.idx = set(np.random.choice(np.arange(self.__len()), size=len(self), replace=False))
+        self.idx = np.arange(self.__len())
+        np.random.shuffle(self.idx)
         self.c = 0 if train else int(self.__len() * (1 - val_split))
         self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
 
@@ -258,14 +256,7 @@ class BookCorpus(TextDataset):
         return int(self.__len() * self.split)
 
     def __getitem__(self, item):
-        return self._parse_sentence(sentence=self.data_stream[item + self.c]["text"])
-        #while True:
-        #    next_sentence = next(iter(self.data_stream["train"]))
-        #    if self.c in self.idx:
-        #        self.c += 1
-        #        break
-        #    self.c += 1
-        #return self._parse_sentence(sentence=next_sentence["text"])
+        return self._parse_sentence(sentence=self.data[self.shuffled[item + self.c]]["text"])
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size

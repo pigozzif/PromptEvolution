@@ -42,5 +42,5 @@ def create_dataset(args, split):
     elif args.dataset == "wikipedia":
         return Wikipedia(train=split == "train")
     elif args.dataset == "bc":
-        return BookCorpus(seed=args.s, train=split == "train")
+        return BookCorpus(train=split == "train")
     raise ValueError("Invalid dataset: {}".format(args.dataset))
