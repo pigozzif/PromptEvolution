@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from data import PTB, Wikipedia, BookCorpus
+from data import PTB, Wikipedia, BookCorpus, MiniPile
 
 
 def to_var(x):
@@ -40,7 +40,9 @@ def create_dataset(args, split):
             min_occ=args.min_occ
         )
     elif args.dataset == "wikipedia":
-        return Wikipedia(train=split == "train")
+        return Wikipedia(train=split == "train", max_length=args.max_sequence_length)
     elif args.dataset == "bc":
-        return BookCorpus(train=split == "train")
+        return BookCorpus(train=split == "train", max_length=args.max_sequence_length)
+    elif args.dataset == "minipile":
+        return MiniPile(split=split, max_length=args.max_sequence_length)
     raise ValueError("Invalid dataset: {}".format(args.dataset))

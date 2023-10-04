@@ -108,7 +108,7 @@ def main(args):
                     step += 1
                 # bookkeeping
                 tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
-                if iteration % args.print_every == 0 or iteration + 1 == len(data_loader):
+                if iteration % args.log_every == 0 or iteration + 1 == len(data_loader):
                     print("%s Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
                           % (split.upper(), iteration, len(data_loader) - 1, loss.item(), NLL_loss.item() / batch_size,
                              KL_loss.item() / batch_size, KL_weight))
@@ -129,34 +129,31 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--dataset", type=str, default="wikipedia")
+    parser.add_argument("--dataset", type=str, default="bc")
     parser.add_argument("--s", type=int, default=0)
     parser.add_argument('--create_data', action='store_true')
-    parser.add_argument('--max_sequence_length', type=int, default=60)
-    parser.add_argument('--min_occ', type=int, default=1)
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument("--max_sequence_length", type=int, default=64)
+    parser.add_argument("--test", action="store_true")
 
-    parser.add_argument('-ep', '--epochs', type=int, default=10)
-    parser.add_argument('-bs', '--batch_size', type=int, default=32)
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
+    parser.add_argument("-ep", "--epochs", type=int, default=10)
+    parser.add_argument("-bs", "--batch_size", type=int, default=32)
+    parser.add_argument("-lr", "--learning_rate", type=float, default=0.001)
 
-    parser.add_argument('-eb', '--embedding_size', type=int, default=300)
-    parser.add_argument('-rnn', '--rnn_type', type=str, default='gru')
-    parser.add_argument('-hs', '--hidden_size', type=int, default=256)
-    parser.add_argument('-nl', '--num_layers', type=int, default=1)
-    parser.add_argument('-bi', '--bidirectional', action='store_true')
-    parser.add_argument('-ls', '--latent_size', type=int, default=16)
-    parser.add_argument('-wd', '--word_dropout', type=float, default=0)
-    parser.add_argument('-ed', '--embedding_dropout', type=float, default=0.5)
+    parser.add_argument("-eb", "--embedding_size", type=int, default=300)
+    parser.add_argument("-rnn", "--rnn_type", type=str, default="gru")
+    parser.add_argument("-hs", "--hidden_size", type=int, default=256)
+    parser.add_argument("-nl", "--num_layers", type=int, default=1)
+    parser.add_argument("-bi", "--bidirectional", action="store_true")
+    parser.add_argument("-ls", "--latent_size", type=int, default=16)
+    parser.add_argument("-wd", "--word_dropout", type=float, default=0)
+    parser.add_argument("-ed", "--embedding_dropout", type=float, default=0.5)
 
-    parser.add_argument('-af', '--anneal_function', type=str, default='logistic')
-    parser.add_argument('-k', '--k', type=float, default=0.0025)
-    parser.add_argument('-x0', '--x0', type=int, default=2500)
+    parser.add_argument("-af", "--anneal_function", type=str, default="logistic")
+    parser.add_argument("-k", "--k", type=float, default=0.0025)
+    parser.add_argument("-x0", "--x0", type=int, default=2500)
 
-    parser.add_argument('-v', '--print_every', type=int, default=50)
-    parser.add_argument('-tb', '--tensorboard_logging', action='store_true')
-    parser.add_argument('-log', '--logdir', type=str, default='logs')
-    parser.add_argument('-bin', '--save_model_path', type=str, default='bin')
+    parser.add_argument("-v", "--log_every", type=int, default=50)
+    parser.add_argument("-bin", "--save_model_path", type=str, default="bin")
 
     args = parser.parse_args()
 

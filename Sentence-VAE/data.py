@@ -239,7 +239,7 @@ class Wikipedia(TextDataset):
 
 class BookCorpus(TextDataset):
 
-    def __init__(self, train, val_split=0.1, max_length=64):
+    def __init__(self, train, val_split=0.2, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.split = val_split if not train else 1 - val_split
         self.data = load_dataset("bookcorpus")["train"]
@@ -257,6 +257,52 @@ class BookCorpus(TextDataset):
 
     def __getitem__(self, item):
         return self._parse_sentence(sentence=self.data[int(self.idx[item + self.c])]["text"])
+
+    def vocab_size(self):
+        return self.word_tokenizer.vocab_size
+
+    def pad_idx(self):
+        return self.word_tokenizer.pad_token_id
+
+    def sos_idx(self):
+        return self.word_tokenizer.cls_token_id
+
+    def eos_idx(self):
+        return self.word_tokenizer.sep_token_id
+
+    def unk_idx(self):
+        return self.word_tokenizer.unk_token_id
+
+    def get_w2i(self):
+        return self.word_tokenizer.vocab
+
+    def get_i2w(self):
+        return self._idx2word
+
+
+class MiniPile(TextDataset):
+
+    def __init__(self, split, max_length=64):
+        self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.split = split
+        self.data = load_dataset("JeanKaddour/MiniPile")[split]
+        self.max_length = max_length
+        self.curr_sentences = []
+        self.idx = 0
+        self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
+
+    def __len__(self):
+        if self.split == "train":
+            return 42339515
+        elif self.split == "valid":
+            return 20203
+        return 442833
+
+    def __getitem__(self, item):
+        if not self.curr_sentences:
+            self.curr_sentences = sent_tokenize(self.data[self.idx]["text"])
+            self.idx += 1
+        return self._parse_sentence(sentence=self.curr_sentences.pop(0))
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
