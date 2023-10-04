@@ -25,7 +25,7 @@ class TextDataset(Dataset, abc.ABC):
 
     def _parse_sentence(self, sentence):
         tokenized_sentence = self.word_tokenizer(sentence,
-                                                 padding=True,
+                                                 padding="max_length",
                                                  truncation=True,
                                                  max_length=64,
                                                  add_special_tokens=True).input_ids
@@ -256,7 +256,7 @@ class BookCorpus(TextDataset):
         return int(self.__len() * self.split)
 
     def __getitem__(self, item):
-        return self._parse_sentence(sentence=self.data[self.idx[item + self.c]]["text"])
+        return self._parse_sentence(sentence=self.data[int(self.idx[item + self.c])]["text"])
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
