@@ -168,9 +168,12 @@ class MiniPile(TextDataset):
         return 442833
 
     def __getitem__(self, item):
-        if not self.curr_sentences:
-            self.curr_sentences = nltk.tokenize.sent_tokenize(self.data[self.idx]["text"])
-            self.idx += 1
+        while not self.curr_sentences:
+            try:
+                self.curr_sentences = nltk.tokenize.sent_tokenize(self.data[self.idx]["text"])
+                self.idx += 1
+            except IndexError:
+                self.idx += 1
         return self._parse_sentence(sentence=self.curr_sentences.pop(0))
 
     def vocab_size(self):
