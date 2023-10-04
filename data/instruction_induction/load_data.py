@@ -11,10 +11,8 @@ def load_data(category, task):
     path = base_path + task + ".json"
     with open(path, "r") as f:
         data = json.load(f)
-
     examples = data["examples"]
     num_examples = len(examples)
-
     inputs, outputs = [], []
     for i in range(num_examples):
         data = examples[str(i + 1)]

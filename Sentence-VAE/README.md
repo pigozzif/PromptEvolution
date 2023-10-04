@@ -1,7 +1,7 @@
 # Sentence Variational Autoencoder
 
 PyTorch re-implementation of [_Generating Sentences from a Continuous Space_](https://arxiv.org/abs/1511.06349) by Bowman et al. 2015.
-Note: This implementation does not support LSTM's at the moment, but RNN's and GRU's._
+Note: This implementation does not support LSTM's at the moment, but RNN's and GRU's. Forked from https://github.com/timbmg/Sentence-VAE/tree/master
 ## Results
 ### Performance
 Training was stopped after 4 epochs. The true ELBO was optimized for approximately 1 epoch (as can bee see in the graph above). Results are averaged over entire split.

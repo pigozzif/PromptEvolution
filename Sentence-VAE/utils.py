@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from data import PTB, Wikipedia
+from data import PTB, Wikipedia, BookCorpus
 
 
 def to_var(x):
@@ -59,4 +59,6 @@ def create_dataset(args, split):
         )
     elif args.dataset == "wikipedia":
         return Wikipedia()
+    elif args.dataset == "bc":
+        return BookCorpus()
     raise ValueError("Invalid dataset: {}".format(args.dataset))

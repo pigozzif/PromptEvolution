@@ -1,4 +1,3 @@
-
 def testQA():
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -10,9 +9,9 @@ def testQA():
     prompt = "Q: What is the largest animal?\nA:"
     inputs = tokenizer(prompt, return_tensors="pt")
 
-    outputs = model.generate(**inputs, num_beams=5,
-                             max_new_tokens=32, early_stopping=True,
-                             no_repeat_ngram_size=2)
+    outputs = model.generate(**inputs)  # , num_beams=5,
+    # max_new_tokens=32, early_stopping=True,
+    # no_repeat_ngram_size=2)
     text_output = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     print(text_output[0])
 

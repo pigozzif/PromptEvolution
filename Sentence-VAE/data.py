@@ -23,6 +23,15 @@ class OrderedCounter(Counter, OrderedDict):
 
 class TextDataset(Dataset, abc.ABC):
 
+    def _parse_sentence(self, sentence):
+        tokenized_sentence = self.word_tokenizer(sentence,
+                                                 padding=True,
+                                                 truncation=True,
+                                                 max_length=64,
+                                                 add_special_tokens=True).input_ids
+        return {"input": np.asarray(tokenized_sentence[:-1]),
+                "target": np.asarray(tokenized_sentence[1:]),
+                "length": len(tokenized_sentence) - 1}
     @abc.abstractmethod
     def vocab_size(self):
         pass
@@ -186,19 +195,47 @@ class Wikipedia(TextDataset):
     def __len__(self):
         return 138151688
 
-    def __getitem__(self, idx):
+    def __getitem__(self, item):
         if not self.temp_data:
-            self.temp_data = next(iter(self.data_stream))
+            self.temp_data = next(iter(self.data_stream["train"]))["text"]
             self.temp_data = sent_tokenize(self.temp_data)
-        next_sentence = self.temp_data.pop(0)
-        tokenized_sentence = self.word_tokenizer(next_sentence,
-                                                 padding=True,
-                                                 truncation=True,
-                                                 max_length=64,
-                                                 add_special_tokens=True).input_ids
-        return {"input": np.asarray(tokenized_sentence[:-1]),
-                "target": np.asarray(tokenized_sentence[1:]),
-                "length": len(tokenized_sentence) - 1}
+        return self._parse_sentence(sentence=self.temp_data.pop(0))
+
+    def vocab_size(self):
+        return self.word_tokenizer.vocab_size
+
+    def pad_idx(self):
+        return self.word_tokenizer.pad_token_id
+
+    def sos_idx(self):
+        return self.word_tokenizer.cls_token_id
+
+    def eos_idx(self):
+        return self.word_tokenizer.sep_token_id
+
+    def unk_idx(self):
+        return self.word_tokenizer.unk_token_id
+
+    def get_w2i(self):
+        return self.word_tokenizer.vocab
+
+    def get_i2w(self):
+        return self._idx2word
+
+
+class BookCorpus(TextDataset):
+
+    def __init__(self, max_length=64):
+        self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.data_stream = load_dataset("bookcorpus", streaming=True)
+        self.max_length = max_length
+        self._idx2word = {v: k for k, v in self.word_tokenizer.vocab.items()}
+
+    def __len__(self):
+        return 0
+
+    def __getitem__(self, item):
+        return self._parse_sentence(sentence=next(iter(self.data_stream["train"]))["text"])
 
     def vocab_size(self):
         return self.word_tokenizer.vocab_size
