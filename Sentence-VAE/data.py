@@ -1,8 +1,8 @@
 import abc
 
 import numpy as np
+import nltk
 from torch.utils.data import Dataset
-from nltk.tokenize import TweetTokenizer, sent_tokenize
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
@@ -51,6 +51,7 @@ class TextDataset(Dataset, abc.ABC):
 class Wikipedia(TextDataset):
 
     def __init__(self, train, val_split=0.1, max_length=64):
+        nltk.downlaod("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.train = train
         self.split = val_split if not train else 1 - val_split
@@ -71,7 +72,7 @@ class Wikipedia(TextDataset):
         while True:
             if not self.temp_data:
                 self.temp_data = next(iter(self.data_stream["train"]))["text"]
-                self.temp_data = sent_tokenize(self.temp_data)
+                self.temp_data = nltk.tokenize.sent_tokenize(self.temp_data)
             next_sentence = self.temp_data.pop(0)
             if self.c in self.idx:
                 self.c += 1
@@ -104,6 +105,7 @@ class Wikipedia(TextDataset):
 class BookCorpus(TextDataset):
 
     def __init__(self, train, val_split=0.2, max_length=64):
+        nltk.downlaod("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.split = val_split if not train else 1 - val_split
         self.data = load_dataset("bookcorpus")["train"]
@@ -147,6 +149,7 @@ class BookCorpus(TextDataset):
 class MiniPile(TextDataset):
 
     def __init__(self, split, max_length=64):
+        nltk.downlaod("punkt")
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         if split == "valid":
             split += "ation"
@@ -166,7 +169,7 @@ class MiniPile(TextDataset):
 
     def __getitem__(self, item):
         if not self.curr_sentences:
-            self.curr_sentences = sent_tokenize(self.data[self.idx]["text"])
+            self.curr_sentences = nltk.tokenize.sent_tokenize(self.data[self.idx]["text"])
             self.idx += 1
         return self._parse_sentence(sentence=self.curr_sentences.pop(0))
 
