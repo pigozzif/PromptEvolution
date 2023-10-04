@@ -109,13 +109,14 @@ def train_vae(args, listener):
                     step += 1
                 # bookkeeping
                 tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
-                listener.listen(**{"epoch": epoch,
-                                   "split": split,
-                                   "batch.loss": loss.item(),
-                                   "batch.nll.loss": nll_loss.item(),
-                                   "batch.kl.loss": kl_loss.item(),
-                                   "batch.kl.weight": kl_weight,
-                                   "elbo.mean": tracker["ELBO"].mean()})
+                if iteration % 100 == 0 or iteration == len(data_loader) - 1:
+                    listener.listen(**{"epoch": epoch,
+                                       "split": split,
+                                       "batch.loss": loss.item(),
+                                       "batch.nll.loss": nll_loss.item(),
+                                       "batch.kl.loss": kl_loss.item(),
+                                       "batch.kl.weight": kl_weight,
+                                       "elbo.mean": tracker["ELBO"].mean()})
 
         # save checkpoint
         checkpoint_path = os.path.join(save_model_path, "E{}.pytorch".format(epoch))
