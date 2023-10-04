@@ -79,7 +79,6 @@ def main(args):
                 dataset=datasets[split],
                 batch_size=args.batch_size,
                 shuffle=split == "train",
-                num_workers=2,
                 pin_memory=torch.cuda.is_available()
             )
             tracker = defaultdict(tensor)
