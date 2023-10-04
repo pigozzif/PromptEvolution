@@ -284,8 +284,10 @@ class MiniPile(TextDataset):
 
     def __init__(self, split, max_length=64):
         self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        if split == "valid":
+            split += "ation"
         self.split = split
-        self.data = load_dataset("JeanKaddour/MiniPile")[split]
+        self.data = load_dataset("JeanKaddour/MiniPile", streaming=True)[split]
         self.max_length = max_length
         self.curr_sentences = []
         self.idx = 0
@@ -294,7 +296,7 @@ class MiniPile(TextDataset):
     def __len__(self):
         if self.split == "train":
             return 42339515
-        elif self.split == "valid":
+        elif self.split == "validation":
             return 20203
         return 442833
 

@@ -49,6 +49,9 @@ class SentenceVAE(nn.Module):
         self.latent2hidden = nn.Linear(latent_size, hidden_size * self.hidden_factor)
         self.outputs2vocab = nn.Linear(hidden_size * (2 if bidirectional else 1), vocab_size)
 
+    def get_number_params(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
     def forward(self, input_sequence, length):
 
         batch_size = input_sequence.size(0)

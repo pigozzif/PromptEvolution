@@ -6,11 +6,12 @@ import numpy as np
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
+from listener import FileListener
 from utils import to_var, idx2word, create_dataset
 from model import SentenceVAE
 
 
-def main(args):
+def train_vae(args, listener):
     ts = time.strftime("%Y-%b-%d-%H:%M:%S", time.gmtime())
 
     splits = ["train", "valid"] + (["test"] if args.test else [])
@@ -108,28 +109,24 @@ def main(args):
                     step += 1
                 # bookkeeping
                 tracker["ELBO"] = torch.cat((tracker["ELBO"], loss.data.view(1, -1)), dim=0)
-                if iteration % args.log_every == 0 or iteration + 1 == len(data_loader):
-                    print("%s Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
-                          % (split.upper(), iteration, len(data_loader) - 1, loss.item(), NLL_loss.item() / batch_size,
-                             KL_loss.item() / batch_size, KL_weight))
-                if split == "valid":
-                    if "target_sents" not in tracker:
-                        tracker["target_sents"] = list()
-                    tracker["target_sents"] += idx2word(batch["target"].data, i2w=datasets["train"].get_i2w(),
-                                                        pad_idx=datasets["train"].pad_idx())
-                    tracker["z"] = torch.cat((tracker["z"], z.data), dim=0)
-            print("%s Epoch %02d/%i, Mean ELBO %9.4f" % (split.upper(), epoch, args.epochs, tracker["ELBO"].mean()))
+                listener.listen({"epoch": epoch,
+                                 "split": split,
+                                 "batch.loss": loss.item(),
+                                 "batch.nll.loss": NLL_loss.item(),
+                                 "batch.kl.loss": KL_loss.item(),
+                                 "batch.kl.weight": KL_weight,
+                                 "elbo.mean": tracker["ELBO"].mean()})
 
-    # save checkpoint
-    checkpoint_path = os.path.join(save_model_path, "final.pytorch")
-    torch.save(model.state_dict(), checkpoint_path)
-    print("Model saved at {}".format(checkpoint_path))
+        # save checkpoint
+        checkpoint_path = os.path.join(save_model_path, "E{}.pytorch".format(epoch))
+        torch.save(model.state_dict(), checkpoint_path)
+        print("Model saved at {}".format(checkpoint_path))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--dataset", type=str, default="bc")
+    parser.add_argument("--dataset", type=str, default="minipile")
     parser.add_argument("--s", type=int, default=0)
     parser.add_argument('--create_data', action='store_true')
     parser.add_argument("--max_sequence_length", type=int, default=64)
@@ -144,7 +141,7 @@ if __name__ == "__main__":
     parser.add_argument("-hs", "--hidden_size", type=int, default=256)
     parser.add_argument("-nl", "--num_layers", type=int, default=1)
     parser.add_argument("-bi", "--bidirectional", action="store_true")
-    parser.add_argument("-ls", "--latent_size", type=int, default=16)
+    parser.add_argument("-ls", "--latent_size", type=int, default=128)
     parser.add_argument("-wd", "--word_dropout", type=float, default=0)
     parser.add_argument("-ed", "--embedding_dropout", type=float, default=0.5)
 
@@ -152,8 +149,8 @@ if __name__ == "__main__":
     parser.add_argument("-k", "--k", type=float, default=0.0025)
     parser.add_argument("-x0", "--x0", type=int, default=2500)
 
-    parser.add_argument("-v", "--log_every", type=int, default=50)
-    parser.add_argument("-bin", "--save_model_path", type=str, default="bin")
+    parser.add_argument("-ld", "--log_dir", type=str, default="output")
+    parser.add_argument("-bin", "--save_model_path", type=str, default="models")
 
     args = parser.parse_args()
 
@@ -163,5 +160,8 @@ if __name__ == "__main__":
     assert args.rnn_type in ["rnn", "lstm", "gru"]
     assert args.anneal_function in ["logistic", "linear"]
     assert 0 <= args.word_dropout <= 1
-
-    main(args)
+    os.makedirs(args.log_dir)
+    listener = FileListener(file_name=os.path.join(args.log_dir, ".".join([args.dataset, args.s, "txt"])),
+                            header=["epoch", "split", "batch.loss", "batch.nll.loss", "batch.kl.loss",
+                                    "batch.kl.weight", "elbo.mean"])
+    train_vae(args=args, listener=listener)
