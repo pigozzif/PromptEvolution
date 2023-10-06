@@ -2,6 +2,8 @@ import re
 import string
 from collections import Counter
 
+from bert_score import score
+
 TASK_TO_METRIC = {"common_concept": "f1", "informal_to_formal": "f1", "orthography_starts_with": "es",
                   "taxonomy_animal": "es", "synonyms": "contains"}
 default_metric = "em"
@@ -90,3 +92,7 @@ def get_multi_answer_contains(prediction, answers):
         if get_contains_score(prediction, answer) == 1:
             return 1
     return 0
+
+
+def get_bert_score(prediction, ground_truth):
+    return score(prediction, ground_truth, model_type="DeBERTa-xl-MNLI", lang="en")[2][0]

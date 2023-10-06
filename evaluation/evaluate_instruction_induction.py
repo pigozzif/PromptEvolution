@@ -13,6 +13,7 @@ sub_tasks = ["antonyms", "cause_and_effect", "common_concept", "diff", "first_wo
 
 
 class InstructionInductionEvaluator(object):
+
     PROMPT_TOKEN = "[PROMPT]"
     INPUT_TOKEN = "[INPUT]"
     OUTPUT_TOKEN = "[OUTPUT]"
@@ -39,7 +40,7 @@ class InstructionInductionEvaluator(object):
         elif metric == "em":
             self.score_fn = get_multi_answer_em
         else:
-            raise ValueError("Invalid metric: {}".format(metric))
+            self.score_fn = get_bert_score
 
     def _fill_template(self, prompt, i):
         return self.eval_template.replace(self.PROMPT_TOKEN, prompt).replace(self.INPUT_TOKEN, i).\
@@ -50,6 +51,6 @@ class InstructionInductionEvaluator(object):
         for i, g in zip(self.test_data[0], self.test_data[1]):
             query = self.tokenizer(self._fill_template(prompt, i), return_tensors="pt")
             output = self.tokenizer.decode(self.model.generate(**query)[0], skip_special_tokens=True)
-            score = self.score_fn(output, self.eval_template.replace(self.OUTPUT_TOKEN, g))
+            score = self.score_fn(output, self.eval_template.replace(self.OUTPUT_TOKEN, g[0]))
             scores.append(score)
         return np.mean(scores)
