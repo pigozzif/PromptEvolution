@@ -25,7 +25,10 @@ def testQA():
     print(text_output[0])
 
 
-def test_zero_shot(task, listener, n_prompts=30):
+def test_zero_shot(task):
+    listener = FileListener(
+        file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
+        header=["scores", "prompts"])
     evaluator = InstructionInductionEvaluator(model_name="tiiuae/falcon-7b", sub_task=task)
     factory = PromptFactory(tokenizer=evaluator.tokenizer, model=evaluator.model, sub_task=task)
     annotations = [normalize_prediction(pred, lowercase=True)
@@ -36,7 +39,8 @@ def test_zero_shot(task, listener, n_prompts=30):
                                                            "{}.json".format(
                                                                task))))[
                        "annotations"]]
-    prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(pop_size=n_prompts)]
+    prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(
+        pop_size=len(annotations))]
     scores = evaluator.scores_against_gold(prompts=prompts, annotations=annotations)
     listener.listen(**{"scores": "/".join([str(s.item()) for s in scores]),
                        "prompts": "/".join([p.replace("/", "*") for p in prompts])})
@@ -45,7 +49,4 @@ def test_zero_shot(task, listener, n_prompts=30):
 if __name__ == "__main__":
     # testQA()
     for sub_task in sub_tasks:
-        lis = FileListener(
-            file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
-            header=["scores", "prompts"])
-        test_zero_shot(task=sub_task, listener=lis)
+        test_zero_shot(task=sub_task)
