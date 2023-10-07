@@ -25,7 +25,7 @@ def testQA():
     print(text_output[0])
 
 
-def test_zero_shot(task):
+def test_zero_shot(task, n_prompts=10):
     listener = FileListener(
         file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
         header=["scores", "prompts"])
@@ -40,8 +40,11 @@ def test_zero_shot(task):
                                                                task))))[
                        "annotations"]]
     prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(
-        pop_size=len(annotations))]
-    scores = evaluator.scores_against_gold(prompts=prompts, annotations=annotations)
+        pop_size=n_prompts)] * len(annotations)
+    new_annotations = []
+    for annotation in annotations:
+        new_annotations.extend([annotation] * n_prompts)
+    scores = evaluator.scores_against_gold(prompts=prompts, annotations=new_annotations)
     listener.listen(**{"scores": "/".join([str(s.item()) for s in scores]),
                        "prompts": "/".join([p.replace("/", "*") for p in prompts])})
 
