@@ -1,3 +1,6 @@
+import json
+import os
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import numpy as np
 
@@ -20,6 +23,7 @@ class InstructionInductionEvaluator(object):
 
     def __init__(self, model_name, sub_task):
         assert sub_task in sub_tasks, "Task not found!"
+        self.task = sub_task
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         _ = self.model.eval()
@@ -54,3 +58,12 @@ class InstructionInductionEvaluator(object):
             score = self.score_fn(output, self.eval_template.replace(self.OUTPUT_TOKEN, g[0]))
             scores.append(score)
         return np.mean(scores)
+
+    def scores_against_gold(self, prompts):
+        annotations = json.load(os.path.join(os.path.dirname(__file__), "annotations", "{}.json".format(self.task)))["annotations"]
+        scores = []
+        for prompt in prompts:
+            for annotation in annotations:
+                score = self.score_fn(prompt, annotation)
+                scores.append(score)
+        return scores

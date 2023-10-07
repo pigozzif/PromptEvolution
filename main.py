@@ -1,4 +1,11 @@
+import os
+import sys
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from evaluation.evaluate_instruction_induction import InstructionInductionEvaluator
+from listener import FileListener
+from prompt_factory import PromptFactory
 
 
 def testQA():
@@ -17,5 +24,19 @@ def testQA():
     print(text_output[0])
 
 
+def test_zero_shot(task, listener, n_prompts=30):
+    evaluator = InstructionInductionEvaluator(model_name="tiiuae/falcon-7b", sub_task=task)
+    factory = PromptFactory(tokenizer=evaluator.tokenizer, model=evaluator.model, sub_task=task)
+    prompts = factory.create_population(pop_size=n_prompts)
+    scores = evaluator.scores_against_gold(prompts=prompts)
+    listener.listen(**{"scores": "/".join([str(s) for s in scores]),
+                       "prompts": "/".join([p.replace("/", "*") for p in prompts])})
+
+
 if __name__ == "__main__":
-    testQA()
+    # testQA()
+    sub_task = sys.argv[1]
+    lis = FileListener(
+        file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
+        header=["scores", "prompts"])
+    test_zero_shot(task=sub_task, listener=lis)
