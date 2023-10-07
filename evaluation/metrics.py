@@ -95,4 +95,4 @@ def get_multi_answer_contains(prediction, answers):
 
 
 def get_bert_score(prediction, ground_truth):
-    return score(prediction, ground_truth, model_type="DeBERTa-xl-MNLI", lang="en")[2][0]
+    return score(prediction, ground_truth, model_type="microsoft/deberta-xlarge-mnli", lang="en")[2]

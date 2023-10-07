@@ -1,9 +1,10 @@
+import json
 import os
-import sys
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from evaluation.evaluate_instruction_induction import InstructionInductionEvaluator
+from evaluation.evaluate_instruction_induction import InstructionInductionEvaluator, sub_tasks
+from evaluation.metrics import normalize_prediction
 from listener import FileListener
 from prompt_factory import PromptFactory
 
@@ -27,16 +28,24 @@ def testQA():
 def test_zero_shot(task, listener, n_prompts=30):
     evaluator = InstructionInductionEvaluator(model_name="tiiuae/falcon-7b", sub_task=task)
     factory = PromptFactory(tokenizer=evaluator.tokenizer, model=evaluator.model, sub_task=task)
-    prompts = factory.create_population(pop_size=n_prompts)
-    scores = evaluator.scores_against_gold(prompts=prompts)
-    listener.listen(**{"scores": "/".join([str(s) for s in scores]),
+    annotations = [normalize_prediction(pred, lowercase=True)
+                   for pred in json.load(open(os.path.join(os.getcwd(),
+                                                           "data",
+                                                           "instruction_induction",
+                                                           "annotations",
+                                                           "{}.json".format(
+                                                               task))))[
+                       "annotations"]]
+    prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(pop_size=n_prompts)]
+    scores = evaluator.scores_against_gold(prompts=prompts, annotations=annotations)
+    listener.listen(**{"scores": "/".join([str(s.item()) for s in scores]),
                        "prompts": "/".join([p.replace("/", "*") for p in prompts])})
 
 
 if __name__ == "__main__":
     # testQA()
-    sub_task = sys.argv[1]
-    lis = FileListener(
-        file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
-        header=["scores", "prompts"])
-    test_zero_shot(task=sub_task, listener=lis)
+    for sub_task in sub_tasks:
+        lis = FileListener(
+            file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
+            header=["scores", "prompts"])
+        test_zero_shot(task=sub_task, listener=lis)

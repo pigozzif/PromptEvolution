@@ -1,6 +1,3 @@
-import json
-import os
-
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import numpy as np
 
@@ -33,7 +30,10 @@ class InstructionInductionEvaluator(object):
                                                                                   self.INPUT_TOKEN,
                                                                                   self.OUTPUT_TOKEN)
 
-    def _set_score_fn(self, sub_task):
+    def _set_score_fn(self, sub_task, bert=True):
+        if bert:
+            self.score_fn = get_bert_score
+            return
         metric = TASK_TO_METRIC.get(sub_task, default_metric)
         if metric == "f1":
             self.score_fn = get_multi_answer_f1
@@ -43,8 +43,6 @@ class InstructionInductionEvaluator(object):
             self.score_fn = get_multi_answer_contains
         elif metric == "em":
             self.score_fn = get_multi_answer_em
-        else:
-            self.score_fn = get_bert_score
 
     def _fill_template(self, prompt, i):
         return self.eval_template.replace(self.PROMPT_TOKEN, prompt).replace(self.INPUT_TOKEN, i).\
@@ -55,15 +53,9 @@ class InstructionInductionEvaluator(object):
         for i, g in zip(self.test_data[0], self.test_data[1]):
             query = self.tokenizer(self._fill_template(prompt, i), return_tensors="pt")
             output = self.tokenizer.decode(self.model.generate(**query)[0], skip_special_tokens=True)
-            score = self.score_fn(output, self.eval_template.replace(self.OUTPUT_TOKEN, g[0]))
+            score = self.score_fn([output], [self.eval_template.replace(self.OUTPUT_TOKEN, g[0])])[0].item()
             scores.append(score)
         return np.mean(scores)
 
-    def scores_against_gold(self, prompts):
-        annotations = json.load(os.path.join(os.path.dirname(__file__), "annotations", "{}.json".format(self.task)))["annotations"]
-        scores = []
-        for prompt in prompts:
-            for annotation in annotations:
-                score = self.score_fn(prompt, annotation)
-                scores.append(score)
-        return scores
+    def scores_against_gold(self, prompts, annotations):
+        return self.score_fn(prompts, annotations)
