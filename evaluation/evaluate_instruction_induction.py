@@ -57,5 +57,15 @@ class InstructionInductionEvaluator(object):
             scores.append(score)
         return np.mean(scores)
 
+    def evaluate_prompts(self, prompts):
+        scores = np.zeros((len(self.test_data[0]), len(prompts)))
+        for idx, (i, g) in enumerate(zip(self.test_data[0], self.test_data[1])):
+            queries = self.tokenizer([normalize_prediction(self._fill_template(prompt, i), lowercase=True)
+                                      for prompt in prompts], return_tensors="pt")
+            outputs = self.tokenizer.batch_decode(self.model.generate(**queries), skip_special_tokens=True)
+            scores[idx] = self.score_fn(outputs, [self.eval_template.replace(self.OUTPUT_TOKEN, g[0])] * len(outputs))\
+                .numpy()
+        return np.mean(scores, axis=1)
+
     def scores_against_gold(self, prompts, annotations):
         return self.score_fn(prompts, annotations)
