@@ -8,7 +8,7 @@ def testQA():
     _ = model.eval()
 
     prompt = "Q: What is the largest animal?\nA:"
-    inputs = tokenizer(prompt, return_tensors="pt")
+    inputs = tokenizer(prompt, truncation=True, max_length=1024, return_tensors="pt")
 
     outputs = model.generate(**inputs)  # , num_beams=5,
     # max_new_tokens=32, early_stopping=True,
