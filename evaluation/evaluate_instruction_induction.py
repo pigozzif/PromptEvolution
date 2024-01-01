@@ -23,7 +23,7 @@ class InstructionInductionEvaluator(object):
         assert sub_task in sub_tasks, "Task not found!"
         self.task = sub_task
         if torch.cuda.is_available():
-            torch.cuda.set_device(torch.device("cuda"))
+            torch.cuda.set_device(torch.device("cuda:0"))
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True)
         _ = self.model.eval()
