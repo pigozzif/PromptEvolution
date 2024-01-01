@@ -6,3 +6,4 @@
 *.mp4
 *.xml
 /automatic_prompt_engineer/
+*.pytorch

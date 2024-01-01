@@ -10,7 +10,7 @@ from prompt_factory import PromptFactory
 
 
 def testQA():
-    model_name = "tiiuae/falcon-rw-1b"
+    model_name = "tiiuae/falcon-rw-7b"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
     _ = model.eval()
