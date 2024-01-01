@@ -7,3 +7,4 @@
 *.xml
 /automatic_prompt_engineer/
 *.pytorch
+.DS_Store

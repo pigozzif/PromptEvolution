@@ -23,15 +23,23 @@ class PromptFactory(object):
                                                                                                    1])]))
 
     def create(self):
-        inputs = self.tokenizer(self.DEMO_FORWARD, truncation=True, max_length=1024, return_tensors="pt")
-        outputs = self.model.generate(**inputs, max_new_tokens=20 + len(inputs.input_ids))
+        inputs = self.tokenizer(self.DEMO_FORWARD,
+                                truncation=True,
+                                max_length=1024,
+                                return_tensors="pt")
+        outputs = self.model.generate(**inputs,
+                                      max_new_tokens=20 + len(inputs.input_ids))
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0][len(self.DEMO_FORWARD):]
 
     def create_population(self, pop_size):
-        inputs = self.tokenizer(self.DEMO_FORWARD, truncation=True, max_length=1024, return_tensors="pt")
+        inputs = self.tokenizer(self.DEMO_FORWARD,
+                                truncation=True,
+                                max_length=1024,
+                                return_tensors="pt")
         outputs = self.model.generate(**inputs,
                                       num_beams=pop_size,
                                       max_new_tokens=20 + len(inputs.input_ids),
                                       num_return_sequences=pop_size)
         return [text[len(self.DEMO_FORWARD):]
-                for text in self.tokenizer.batch_decode(outputs, skip_special_tokens=True)]
+                for text in self.tokenizer.batch_decode(outputs,
+                                                        skip_special_tokens=True)]
