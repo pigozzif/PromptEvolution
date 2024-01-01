@@ -9,7 +9,6 @@ from utils import *
 
 
 def main(args):
-    datasets = OrderedDict()
     dataset = create_dataset(args=args, split="None")
     params = dict(
         vocab_size=dataset.vocab_size(),
@@ -42,14 +41,14 @@ def main(args):
 
     samples, z = model.inference(n=args.num_samples)
     print("----------SAMPLES----------")
-    print(*idx2word(samples, i2w=dataset.get_i2w(), pad_idx=datasets["train"].pad_idx()), sep="\n")
+    print(*idx2word(samples, i2w=dataset.get_i2w(), pad_idx=dataset.pad_idx()), sep="\n")
 
     z1 = torch.randn([args.latent_size]).numpy()
     z2 = torch.randn([args.latent_size]).numpy()
     z = to_var(torch.from_numpy(interpolate(start=z1, end=z2, steps=8)).float())
     samples, _ = model.inference(z=z)
     print("-------INTERPOLATION-------")
-    print(*idx2word(samples, i2w=dataset.get_i2w(), pad_idx=datasets["train"].pad_idx()), sep='\n')
+    print(*idx2word(samples, i2w=dataset.get_i2w(), pad_idx=dataset.pad_idx()), sep='\n')
 
 
 if __name__ == "__main__":
