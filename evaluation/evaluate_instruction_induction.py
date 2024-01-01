@@ -21,8 +21,8 @@ class InstructionInductionEvaluator(object):
     def __init__(self, model_name, sub_task):
         assert sub_task in sub_tasks, "Task not found!"
         self.task = sub_task
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True)
         _ = self.model.eval()
         self.test_data = load_data("eval", sub_task)
         self._set_score_fn(sub_task)

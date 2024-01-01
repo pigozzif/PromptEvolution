@@ -25,11 +25,11 @@ def testQA():
     print(text_output[0])
 
 
-def test_zero_shot(task, n_prompts=10):
+def test_zero_shot(task, model_name="microsoft/phi-2", n_prompts=10):
     listener = FileListener(
         file_name=os.path.join("output", ".".join(["zeroshot", sub_task, "txt"])),
         header=["scores", "prompts"])
-    evaluator = InstructionInductionEvaluator(model_name="tiiuae/falcon-7b", sub_task=task)
+    evaluator = InstructionInductionEvaluator(model_name=model_name, sub_task=task)
     factory = PromptFactory(tokenizer=evaluator.tokenizer, model=evaluator.model, sub_task=task)
     annotations = [normalize_prediction(pred, lowercase=True)
                    for pred in json.load(open(os.path.join(os.getcwd(),
@@ -39,8 +39,11 @@ def test_zero_shot(task, n_prompts=10):
                                                            "{}.json".format(
                                                                task))))[
                        "annotations"]]
-    prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(
-        pop_size=n_prompts)] * len(annotations)
+    if "phi-2" not in model_name:
+        prompts = [normalize_prediction(prompt, lowercase=True) for prompt in factory.create_population(
+            pop_size=n_prompts)] * len(annotations)
+    else:
+        prompts = [normalize_prediction(factory.create(), lowercase=True) for _ in range(n_prompts)] * len(annotations)
     new_annotations = []
     for annotation in annotations:
         new_annotations.extend([annotation] * n_prompts)
