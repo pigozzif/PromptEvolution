@@ -23,6 +23,11 @@ class InstructionInductionEvaluator(object):
         self.task = sub_task
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True)
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+            print("Running on GPU")
+        else:
+            print("Running on CPU")
         _ = self.model.eval()
         self.test_data = load_data("eval", sub_task)
         self._set_score_fn(sub_task)
