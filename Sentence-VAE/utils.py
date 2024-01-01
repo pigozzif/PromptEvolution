@@ -23,10 +23,8 @@ def idx2word(idx, i2w, pad_idx):
 
 def interpolate(start, end, steps):
     interpolation = np.zeros((start.shape[0], steps + 2))
-
     for dim, (s, e) in enumerate(zip(start, end)):
         interpolation[dim] = np.linspace(s, e, steps + 2)
-
     return interpolation.T
 
 
