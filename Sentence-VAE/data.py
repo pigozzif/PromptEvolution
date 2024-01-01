@@ -154,7 +154,7 @@ class MiniPile(TextDataset):
         if split == "valid":
             split += "ation"
         self.split = split
-        self.data = load_dataset("JeanKaddour/MiniPile")[split]
+        self.data = load_dataset("JeanKaddour/MiniPile")[split] if self.split != "None" else None
         self.max_length = max_length
         self.curr_sentences = []
         self.idx = 0
