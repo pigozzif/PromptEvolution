@@ -2,9 +2,10 @@ import os
 import json
 import torch
 import argparse
-from utils import *
+from collections import OrderedDict, defaultdict
 
 from model import SentenceVAE
+from utils import *
 
 
 def main(args):
