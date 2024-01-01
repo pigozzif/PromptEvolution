@@ -2,13 +2,14 @@ import os
 import json
 import torch
 import argparse
+from utils import *
 
 from model import SentenceVAE
-from utils import to_var, idx2word, interpolate
 
 
 def main(args):
     datasets = OrderedDict()
+    splits = ["train", "valid"] + (["test"] if args.test else [])
     for split in splits:
         datasets[split] = create_dataset(args=args, split=split)
     params = dict(
@@ -32,7 +33,7 @@ def main(args):
     if not os.path.exists(args.save_model_path):
         raise FileNotFoundError(args.save_model_path)
 
-    model.load_state_dict(torch.load(args.save_model_path))
+    model.load_state_dict(torch.load(os.path.join(args.save_model_path, args.model)))
     print("Model loaded from %s" % args.save_model_path)
 
     if torch.cuda.is_available():
@@ -55,12 +56,10 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-c', '--load_checkpoint', type=str)
     parser.add_argument("-n", "--num_samples", type=int, default=10)
 
     parser.add_argument("--dataset", type=str, default="minipile")
     parser.add_argument("--s", type=int, default=0)
-    parser.add_argument('--create_data', action='store_true')
     parser.add_argument("--max_sequence_length", type=int, default=64)
     parser.add_argument("--test", action="store_true")
 
@@ -83,6 +82,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-ld", "--log_dir", type=str, default="output")
     parser.add_argument("-bin", "--save_model_path", type=str, default="models")
+    parser.add_argument("-m", "--model", type=str, default="3/E0.pytorch")
 
     arguments = parser.parse_args()
     assert arguments.rnn_type in ["rnn", "lstm", "gru"]
