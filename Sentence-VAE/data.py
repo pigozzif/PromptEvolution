@@ -48,6 +48,39 @@ class TextDataset(Dataset, abc.ABC):
         pass
 
 
+class Dummy(TextDataset):
+
+    def __init__(self):
+        self.word_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, item):
+        return self._parse_sentence(sentence="hello world")
+
+    def vocab_size(self):
+        return self.word_tokenizer.vocab_size
+
+    def pad_idx(self):
+        return self.word_tokenizer.pad_token_id
+
+    def sos_idx(self):
+        return self.word_tokenizer.cls_token_id
+
+    def eos_idx(self):
+        return self.word_tokenizer.sep_token_id
+
+    def unk_idx(self):
+        return self.word_tokenizer.unk_token_id
+
+    def get_w2i(self):
+        return self.word_tokenizer.vocab
+
+    def get_i2w(self):
+        return None
+
+
 class Wikipedia(TextDataset):
 
     def __init__(self, train, val_split=0.1, max_length=64):

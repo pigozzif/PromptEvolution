@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
 from listener import FileListener
-from utils import to_var, create_dataset
+from utils import to_var, create_dataset, set_seed
 from model import SentenceVAE
 
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
 
     parser.add_argument("-ep", "--epochs", type=int, default=10)
-    parser.add_argument("-bs", "--batch_size", type=int, default=32)
+    parser.add_argument("-bs", "--batch_size", type=int, default=32 * 8)
     parser.add_argument("-lr", "--learning_rate", type=float, default=0.001)
 
     parser.add_argument("-eb", "--embedding_size", type=int, default=300)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("-bin", "--save_model_path", type=str, default="models")
 
     arguments = parser.parse_args()
-
+    set_seed(arguments.s)
     arguments.rnn_type = arguments.rnn_type.lower()
     arguments.anneal_function = arguments.anneal_function.lower()
 

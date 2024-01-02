@@ -1,7 +1,12 @@
 import torch
 import numpy as np
 
-from data import Wikipedia, BookCorpus, MiniPile
+from data import Wikipedia, BookCorpus, MiniPile, Dummy
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 def to_var(x):
@@ -29,7 +34,9 @@ def interpolate(start, end, steps):
 
 
 def create_dataset(args, split):
-    if args.dataset == "wikipedia":
+    if args.dataset == "dummy":
+        return Dummy()
+    elif args.dataset == "wikipedia":
         return Wikipedia(train=split == "train", max_length=args.max_sequence_length)
     elif args.dataset == "bc":
         return BookCorpus(train=split == "train", max_length=args.max_sequence_length)
